@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768" width="1366" height="768">
+  <defs>
+    <!-- Background gradient: deep navy with subtle variation -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#0E1525"/>
+      <stop offset="100%" stop-color="#0C1220"/>
+    </linearGradient>
+    <!-- Accent gradient for geometric shapes -->
+    <linearGradient id="accent1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.01"/>
+    </linearGradient>
+    <!-- Radial glow -->
+    <radialGradient id="glow" cx="85%" cy="80%" r="40%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Stars/dots scatter -->
+    <radialGradient id="star">
+      <stop offset="0%" stop-color="#E2E8F0" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#E2E8F0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Base background -->
+  <rect width="1366" height="768" fill="url(#bg)"/>
+
+  <!-- Subtle geometric layers -->
+  <ellipse cx="200" cy="900" rx="600" ry="500" fill="url(#accent1)"/>
+  <ellipse cx="1200" cy="-100" rx="500" ry="400" fill="url(#accent2)"/>
+  <rect width="1366" height="768" fill="url(#glow)"/>
+
+  <!-- Thin geometric lines -->
+  <line x1="683" y1="0" x2="683" y2="768" stroke="#3B82F6" stroke-opacity="0.05" stroke-width="1"/>
+  <line x1="0" y1="384" x2="1366" y2="384" stroke="#3B82F6" stroke-opacity="0.05" stroke-width="1"/>
+
+  <!-- Subtle star field (tiny dots) -->
+  <circle cx="150" cy="120" r="1" fill="#E2E8F0" opacity="0.15"/>
+  <circle cx="400" cy="80" r="0.8" fill="#E2E8F0" opacity="0.12"/>
+  <circle cx="680" cy="150" r="1.2" fill="#E2E8F0" opacity="0.10"/>
+  <circle cx="900" cy="60" r="0.8" fill="#E2E8F0" opacity="0.14"/>
+  <circle cx="1100" cy="200" r="1" fill="#E2E8F0" opacity="0.11"/>
+  <circle cx="1250" cy="100" r="0.7" fill="#E2E8F0" opacity="0.13"/>
+  <circle cx="300" cy="300" r="0.9" fill="#E2E8F0" opacity="0.09"/>
+  <circle cx="550" cy="650" r="1" fill="#E2E8F0" opacity="0.10"/>
+  <circle cx="800" cy="700" r="0.8" fill="#E2E8F0" opacity="0.12"/>
+  <circle cx="1050" cy="600" r="1.1" fill="#E2E8F0" opacity="0.08"/>
+  <circle cx="250" cy="500" r="0.7" fill="#E2E8F0" opacity="0.11"/>
+  <circle cx="1300" cy="400" r="0.9" fill="#E2E8F0" opacity="0.10"/>
+
+  <!-- Abstract shield shape (bottom-right, subtle glow) -->
+  <path d="M1100,500 Q1100,460 1130,440 L1180,420 L1230,440 Q1260,460 1260,500 L1260,560 Q1260,620 1180,660 Q1100,620 1100,560 Z"
+        fill="none" stroke="#3B82F6" stroke-opacity="0.12" stroke-width="1.5"/>
+</svg>
