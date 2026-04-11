@@ -38,7 +38,8 @@
   # Display — 11.6" 1366x768 TN, ~135 PPI
   # No scaling needed (1x).
 
-  # Power management
+  # Power management (TLP conflicts with power-profiles-daemon from COSMIC)
+  services.power-profiles-daemon.enable = false;
   services.thermald.enable = true;
   services.tlp = {
     enable = true;

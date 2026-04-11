@@ -40,7 +40,8 @@
   # Headphone jack detection via acpid
   services.acpid.enable = true;
 
-  # Aggressive power savings for 2GB tier
+  # Aggressive power savings for 2GB tier (TLP conflicts with power-profiles-daemon from COSMIC)
+  services.power-profiles-daemon.enable = false;
   services.thermald.enable = true;
   services.tlp = {
     enable = true;
