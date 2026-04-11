@@ -18,7 +18,7 @@
     "i2c_designware_platform" # I2C bus for Apollo Lake SoC
     # Audio: AVS driver for Apollo Lake + DA7219/MAX98357A
     # AVS (dsp_driver=4) supports headphones; SOF only gives speakers.
-    # NOTE: AVS can be unstable — speakers disabled by default as safety measure.
+    # NOTE: AVS can be unstable on some Apollo Lake boards — test audio on first boot.
     "snd_sof" "snd_sof_pci_intel_apl"
   ];
 

@@ -58,8 +58,9 @@
     auto-optimise-store = true;
   };
 
-  # No unfree packages — GPL v3 project
-  nixpkgs.config.allowUnfree = false;
+  # Default to no unfree packages — GPL v3 project
+  # apps.nix overrides this for Brave browser
+  nixpkgs.config.allowUnfree = lib.mkDefault false;
 
   # ── Minimal base packages ──────────────────────────────────────────
 
@@ -82,10 +83,10 @@
   services.avahi.enable = false;          # No mDNS/printer discovery
   services.printing.enable = false;       # No CUPS
   services.openssh.enable = false;        # No SSH server
-  services.xserver.enable = lib.mkForce false; # No X11 — Wayland only
+  services.xserver.enable = lib.mkDefault false; # Prefer Wayland; COSMIC module may override
 
-  # Disable remote filesystem services
-  boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "ntfs" ];
+  # Limit supported filesystems (squashfs added for live ISO boot)
+  boot.supportedFilesystems = lib.mkDefault [ "ext4" "vfat" "ntfs" "squashfs" ];
 
   # Disable unused systemd services
   systemd.services."systemd-rfkill".enable = lib.mkDefault true; # Keep — needed for WiFi toggle

@@ -123,5 +123,7 @@
       xdg-desktop-portal-cosmic
       xdg-desktop-portal-gtk # Fallback for GTK apps
     ];
+    # Prefer COSMIC portal; fall back to GTK for apps that don't support it
+    config.common.default = [ "cosmic" "gtk" ];
   };
 }

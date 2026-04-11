@@ -199,7 +199,7 @@ Run through everything end-to-end before declaring the USB image done.
 - [ ] **10.5** Hardware check: WiFi, audio, touchpad, keyboard, display, battery all functional
 - [ ] **10.6** Security check: firewall active, AppArmor active, no listening services
 - [ ] **10.7** Usability check: have a non-technical person attempt the install with written instructions
-- [ ] **10.8** Document the full installation guide (firmware flash + USB boot + install steps)
+- [x] **10.8** Document the full installation guide (firmware flash + USB boot + install steps) — `docs/INSTALL.md`
 - [ ] **10.9** Tag the repo: `v0.1.0-alpha` -- first bootable Chromebook image
 
 ---

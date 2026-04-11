@@ -86,13 +86,14 @@
   # NetworkManager: disable connectivity check (pings connectivity servers)
   networking.networkmanager.settings = {
     connectivity = {
-      enabled = false;
+      enabled = "false";
     };
   };
 
-  # Block common telemetry domains via /etc/hosts
+  # Block browser telemetry domains via /etc/hosts
+  # Installer swaps these to Firefox equivalents when Firefox is chosen
   networking.extraHosts = ''
-    # Stronk 1: Block telemetry endpoints
+    # Stronk 1: Block telemetry endpoints (Brave — swapped by installer for Firefox)
     0.0.0.0 telemetry.brave.com
     0.0.0.0 laptop-updates.brave.com
     0.0.0.0 variations.brave.com

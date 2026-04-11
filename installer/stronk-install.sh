@@ -6,6 +6,7 @@ set -euo pipefail
 FLAKE_SOURCE="/etc/stronk-flake"
 MOUNT_POINT="/mnt"
 LOG_FILE="/tmp/stronk-install.log"
+INSTALL_ERROR_FILE="/tmp/stronk-install-error"
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ BIOS_VENDOR=$(cat /sys/class/dmi/id/bios_vendor 2>/dev/null || echo "unknown")
 BOARD_NAME=$(cat /sys/class/dmi/id/board_name 2>/dev/null || echo "unknown")
 log "BIOS vendor: $BIOS_VENDOR, Board: $BOARD_NAME"
 
-if [[ "$BIOS_VENDOR" != *"coreboot"* ]]; then
+if [[ "${BIOS_VENDOR,,}" != *"coreboot"* ]]; then
   zenity --warning \
     --title="Firmware Notice" \
     --text="This computer does not appear to have MrChromebox UEFI firmware.\n\n<b>If this is a Chromebook:</b>\nYou must flash MrChromebox Full ROM firmware first.\nVisit mrchromebox.tech for instructions, or run\n<tt>stronk-firmware-guide</tt> in a terminal.\n\n<b>If this is a standard PC:</b>\nYou can safely continue — no firmware flash is needed." \
@@ -229,6 +230,16 @@ log "User confirmed installation"
 
 # ── Step 7: Installation (9.7) ─────────────────────────────────────────
 
+# Error function for use inside the install subshell.
+# Writes to a file instead of showing a dialog (avoids double-dialog with zenity --progress).
+install_fail() {
+  log "INSTALL ERROR: $1"
+  echo "$1" > "$INSTALL_ERROR_FILE"
+  exit 1
+}
+
+rm -f "$INSTALL_ERROR_FILE"
+
 (
   # Redirect stderr to log; stdout goes to zenity progress via pipe
   exec 2>>"$LOG_FILE"
@@ -241,13 +252,25 @@ log "User confirmed installation"
     umount "$part" 2>/dev/null || true
   done
 
+  # Verify target disk has at least 4GB (needed for NixOS install)
+  DISK_BYTES=$(lsblk -bdno SIZE "$SELECTED_DISK" 2>/dev/null || echo 0)
+  if [[ "$DISK_BYTES" -lt 4294967296 ]]; then
+    install_fail "Target disk is smaller than 4GB. Stronk 1 requires at least 4GB of disk space."
+  fi
+
   echo "10"
   echo "# Partitioning $SELECTED_DISK..."
   log "Partitioning $SELECTED_DISK"
-  parted -s "$SELECTED_DISK" mklabel gpt
-  parted -s "$SELECTED_DISK" mkpart ESP fat32 1MiB 512MiB
+  if ! parted -s "$SELECTED_DISK" mklabel gpt; then
+    install_fail "Failed to create partition table on $SELECTED_DISK"
+  fi
+  if ! parted -s "$SELECTED_DISK" mkpart ESP fat32 1MiB 512MiB; then
+    install_fail "Failed to create EFI partition on $SELECTED_DISK"
+  fi
   parted -s "$SELECTED_DISK" set 1 boot on
-  parted -s "$SELECTED_DISK" mkpart primary ext4 512MiB 100%
+  if ! parted -s "$SELECTED_DISK" mkpart primary ext4 512MiB 100%; then
+    install_fail "Failed to create root partition on $SELECTED_DISK"
+  fi
 
   EFI_PART=$(get_part "$SELECTED_DISK" 1)
   ROOT_PART=$(get_part "$SELECTED_DISK" 2)
@@ -274,15 +297,16 @@ log "User confirmed installation"
   # Apply user choices to the copied configuration
   log "Applying user choices: timezone=$TIMEZONE, browser=$BROWSER"
 
-  # Set timezone
-  sed -i "s|time.timeZone = \"UTC\";|time.timeZone = \"$TIMEZONE\";|" \
+  # Set timezone (escape sed metacharacters in timezone string)
+  TIMEZONE_ESCAPED=$(printf '%s\n' "$TIMEZONE" | sed 's/[&/\]/\\&/g')
+  sed -i "s|time.timeZone = \"UTC\";|time.timeZone = \"$TIMEZONE_ESCAPED\";|" \
     "$MOUNT_POINT/etc/nixos/modules/core.nix"
 
   # Browser choice: if Firefox, swap Brave for Firefox in apps.nix and security.nix
   if [[ "$BROWSER" == "firefox" ]]; then
     log "Switching browser to Firefox"
-    local APPS="$MOUNT_POINT/etc/nixos/modules/apps.nix"
-    local SEC="$MOUNT_POINT/etc/nixos/modules/security.nix"
+    APPS="$MOUNT_POINT/etc/nixos/modules/apps.nix"
+    SEC="$MOUNT_POINT/etc/nixos/modules/security.nix"
 
     # apps.nix: replace browser package and marker
     sed -i 's/# INSTALLER_BROWSER: brave/# INSTALLER_BROWSER: firefox/' "$APPS"
@@ -293,7 +317,7 @@ log "User confirmed installation"
 
     # Validate browser swap succeeded
     if ! grep -q 'firefox # Open source browser' "$APPS"; then
-      die "Failed to switch browser to Firefox in apps.nix"
+      install_fail "Failed to switch browser to Firefox in apps.nix"
     fi
 
     # security.nix: replace Firejail profile
@@ -301,20 +325,30 @@ log "User confirmed installation"
     sed -i 's|\${pkgs.brave}/bin/brave|\${pkgs.firefox}/bin/firefox|' "$SEC"
     sed -i 's|chromium-browser.profile|firefox.profile|' "$SEC"
 
-    # security.nix: update telemetry host blocks (remove Brave-specific, no Firefox ones needed)
-    sed -i '/telemetry\.brave\.com/d' "$SEC"
-    sed -i '/laptop-updates\.brave\.com/d' "$SEC"
-    sed -i '/variations\.brave\.com/d' "$SEC"
+    # Validate Firejail browser swap succeeded
+    if ! grep -q 'firefox = {' "$SEC"; then
+      install_fail "Failed to switch Firejail profile to Firefox in security.nix"
+    fi
+
+    # security.nix: swap Brave telemetry blocks for Firefox ones
+    sed -i 's|0.0.0.0 telemetry.brave.com|0.0.0.0 telemetry.mozilla.org|' "$SEC"
+    sed -i 's|0.0.0.0 laptop-updates.brave.com|0.0.0.0 incoming.telemetry.mozilla.org|' "$SEC"
+    sed -i 's|0.0.0.0 variations.brave.com|0.0.0.0 normandy.cdn.mozilla.net|' "$SEC"
 
     log "Browser switch to Firefox completed and validated"
   fi
 
-  # Initialize git repo so the flake can evaluate
+  # Initialize git repo — required for Nix flake evaluation
   if ! (cd "$MOUNT_POINT/etc/nixos" && \
         git init && \
-        git -c user.name="Stronk" -c user.email="install@stronk" add -A && \
-        git -c user.name="Stronk" -c user.email="install@stronk" commit -m "Stronk 1 install"); then
-    log "WARNING: Git initialization failed — flake evaluation may fail"
+        git -c user.name="Stronk" -c user.email="install@stronk.os" add -A && \
+        git -c user.name="Stronk" -c user.email="install@stronk.os" commit -m "Stronk 1 install"); then
+    install_fail "Failed to initialize git repository. Nix flakes require a git repo to evaluate.\n\nCheck $LOG_FILE for details."
+  fi
+
+  # Re-check network if Firefox was selected (it requires download during install)
+  if [[ "$BROWSER" == "firefox" ]] && ! has_network; then
+    install_fail "Network connection lost. Firefox requires internet to install.\n\nPlease reconnect and retry, or restart the installer to choose Brave."
   fi
 
   echo "50"
@@ -344,9 +378,15 @@ log "User confirmed installation"
   --width=450 \
   || {
     log "Installation failed — see $LOG_FILE"
+    # Show specific error if available, otherwise generic message
+    ERROR_MSG="Installation failed. Check the log at:\n$LOG_FILE\n\nYou can open a terminal to investigate."
+    if [[ -f "$INSTALL_ERROR_FILE" ]]; then
+      ERROR_MSG=$(cat "$INSTALL_ERROR_FILE")
+      rm -f "$INSTALL_ERROR_FILE"
+    fi
     zenity --error \
       --title="Installation Failed" \
-      --text="Installation failed. Check the log at:\n$LOG_FILE\n\nYou can open a terminal to investigate." \
+      --text="$ERROR_MSG" \
       --width=400
     umount -R "$MOUNT_POINT" 2>/dev/null || true
     exit 1
