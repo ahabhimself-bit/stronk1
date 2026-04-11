@@ -44,21 +44,21 @@
   # ── Fonts (Step 4.6) ───────────────────────────────────────────────
 
   fonts = {
-    enableDefaultPackages = true;
+    # Disable default font packages (DejaVu, FreeFont, Liberation) to save ~50MB
+    enableDefaultPackages = false;
     packages = with pkgs; [
       # System UI
       inter                    # Clean, modern UI font
       # Monospace
       jetbrains-mono           # Terminal / code font
-      # Fallback / emoji
-      noto-fonts
-      noto-fonts-emoji
+      # Emoji only — full noto-fonts removed to save ~200MB
+      noto-fonts-color-emoji
     ];
 
     fontconfig = {
       defaultFonts = {
-        sansSerif = [ "Inter" "Noto Sans" ];
-        monospace = [ "JetBrains Mono" "Noto Sans Mono" ];
+        sansSerif = [ "Inter" ];
+        monospace = [ "JetBrains Mono" ];
         emoji = [ "Noto Color Emoji" ];
       };
     };

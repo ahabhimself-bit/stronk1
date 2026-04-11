@@ -16,8 +16,8 @@
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
 
-  # Squashfs compression for smaller ISO
-  isoImage.squashfsCompression = "zstd -Xcompression-level 19";
+  # Squashfs compression — xz achieves ~10-15% better ratio than zstd for OS images
+  isoImage.squashfsCompression = "xz -Xdict-size 100%";
 
   # ── Size optimization ────────────────────────────────────────────────
 
