@@ -1,0 +1,48 @@
+name: Build Stronk 1 ISO
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Cache Nix store
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Evaluate flake (syntax check)
+        run: nix flake check --no-build
+
+      - name: Build ISO
+        run: nix build .#packages.x86_64-linux.iso --print-build-logs
+        timeout-minutes: 120
+
+      - name: Check ISO size (must be under 800MB)
+        run: |
+          ISO_PATH=$(find result/ -name '*.iso' -type f | head -1)
+          ISO_SIZE=$(stat -c%s "$ISO_PATH")
+          ISO_MB=$((ISO_SIZE / 1048576))
+          echo "ISO size: ${ISO_MB}MB"
+          if [ "$ISO_MB" -gt 800 ]; then
+            echo "FAIL: ISO is ${ISO_MB}MB, exceeds 800MB limit"
+            exit 1
+          fi
+          echo "PASS: ISO is ${ISO_MB}MB (under 800MB)"
+
+      - name: Upload ISO artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stronk1-iso
+          path: result/iso/*.iso
+          retention-days: 14
