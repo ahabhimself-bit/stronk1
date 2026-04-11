@@ -8,20 +8,33 @@ on:
   workflow_dispatch: # Manual trigger
 
 jobs:
-  build:
+  evaluate:
+    name: Evaluate flake
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Evaluate all NixOS configurations
+        run: |
+          for cfg in stronk-generic stronk-kefka stronk-setzer stronk-snappy; do
+            echo "Evaluating $cfg..."
+            nix eval ".#nixosConfigurations.$cfg.config.system.stateVersion"
+          done
+          echo "Evaluating ISO derivation..."
+          nix eval .#packages.x86_64-linux.iso.name
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+  build:
+    name: Build ISO
+    needs: evaluate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Cache Nix store
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Evaluate flake (syntax check)
-        run: nix flake check --no-build
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Build ISO
         run: nix build .#packages.x86_64-linux.iso --print-build-logs
@@ -33,8 +46,9 @@ jobs:
           ISO_SIZE=$(stat -c%s "$ISO_PATH")
           ISO_MB=$((ISO_SIZE / 1048576))
           echo "ISO size: ${ISO_MB}MB"
+          echo "iso_size_mb=${ISO_MB}" >> "$GITHUB_OUTPUT"
           if [ "$ISO_MB" -gt 800 ]; then
-            echo "FAIL: ISO is ${ISO_MB}MB, exceeds 800MB limit"
+            echo "::error::ISO is ${ISO_MB}MB, exceeds 800MB limit"
             exit 1
           fi
           echo "PASS: ISO is ${ISO_MB}MB (under 800MB)"

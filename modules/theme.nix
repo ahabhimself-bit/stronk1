@@ -14,7 +14,7 @@
     VERSION="0.1.0-alpha (Phase 0)"
     HOME_URL="https://stronk.computer"
     DOCUMENTATION_URL="https://stronk.computer/docs"
-    BUG_REPORT_URL="https://github.com/stronk/stronk1/issues"
+    BUG_REPORT_URL="https://github.com/ahabhimself-bit/stronk1/issues"
     LOGO="stronk-logo"
   '';
 
