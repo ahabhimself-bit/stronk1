@@ -198,10 +198,11 @@ done
 # Add separator and full list
 while IFS= read -r tz; do
   # Skip if already in common list
+  # shellcheck disable=SC2076
   if [[ ! " ${COMMON_TZ[*]} " =~ " ${tz} " ]]; then
     TZ_ENTRIES+=("$tz")
   fi
-done < <(timedatectl list-timezones 2>/dev/null || cat /usr/share/zoneinfo/tzdata.zi 2>/dev/null | awk '/^Z/{print $2}' || echo "UTC")
+done < <(timedatectl list-timezones 2>/dev/null || awk '/^Z/{print $2}' /usr/share/zoneinfo/tzdata.zi 2>/dev/null || echo "UTC")
 
 TIMEZONE=$(zenity --list \
   --title="Select Timezone" \
@@ -322,6 +323,7 @@ rm -f "$INSTALL_ERROR_FILE"
 
     # security.nix: replace Firejail profile
     sed -i 's|brave = {|firefox = {|' "$SEC"
+    # shellcheck disable=SC2016
     sed -i 's|\${pkgs.brave}/bin/brave|\${pkgs.firefox}/bin/firefox|' "$SEC"
     sed -i 's|chromium-browser.profile|firefox.profile|' "$SEC"
 
