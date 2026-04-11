@@ -2,22 +2,16 @@
   description = "Stronk 1 — Your Computer. Actually Yours.";
 
   inputs = {
-    # Pin to NixOS 24.11 stable
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-
-    # COSMIC desktop packages
-    nixos-cosmic = {
-      url = "github:lilyinstarlight/nixos-cosmic/7f49ed842533";
-    };
+    # NixOS 25.05 — includes COSMIC desktop natively
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   };
 
-  outputs = { self, nixpkgs, nixos-cosmic, ... }:
+  outputs = { self, nixpkgs, ... }:
     let
       system = "x86_64-linux";
 
       # Common modules shared by all configurations
       commonModules = [
-        nixos-cosmic.nixosModules.default
         ./modules/core.nix
         ./modules/desktop.nix
         ./modules/apps.nix
