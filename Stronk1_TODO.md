@@ -146,16 +146,16 @@ Make the image work specifically on your target Chromebook(s).
   - [x] Keyboard mapping (keyd: Search=Super, Search+toprow=F1-F10 — in desktop.nix shared module)
   - [x] Power management / battery optimization (thermald + TLP per model)
   - [x] Audio routing (KEFKA/SETZER: SOF+acpid for jack detection; SNAPPY: AVS for headphone support)
-- [ ] **8.4** Rebuild ISO with Chromebook hardware profile included
-- [ ] **8.5** Boot USB on Chromebook -- verify desktop loads
-- [ ] **8.6** Verify WiFi connects
-- [ ] **8.7** Verify audio works (speakers + headphone jack)
-- [ ] **8.8** Verify touchpad gestures work
-- [ ] **8.9** Verify keyboard special keys work (brightness, volume, Search)
-- [ ] **8.10** Verify display scaling looks correct
-- [ ] **8.11** Verify battery status shows and power management works
-- [ ] **8.12** Measure boot time on Chromebook (target: under 15 seconds)
-- [ ] **8.13** Measure idle RAM on Chromebook (target: under 500MB)
+- [ ] **8.4** Rebuild ISO with Chromebook hardware profile included ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **8.5** Boot USB on Chromebook -- verify desktop loads ⚠️ **BLOCKED — requires 8.4 + Chromebook hardware**
+- [ ] **8.6** Verify WiFi connects ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.7** Verify audio works (speakers + headphone jack) ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.8** Verify touchpad gestures work ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.9** Verify keyboard special keys work (brightness, volume, Search) ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.10** Verify display scaling looks correct ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.11** Verify battery status shows and power management works ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.12** Measure boot time on Chromebook (target: under 15 seconds) ⚠️ **BLOCKED — requires 8.5**
+- [ ] **8.13** Measure idle RAM on Chromebook (target: under 500MB) ⚠️ **BLOCKED — requires 8.5**
 
 ---
 
@@ -179,12 +179,12 @@ Build the installer that writes Stronk 1 from the USB to the Chromebook's intern
   - zenity progress dialog, logs to /tmp/stronk-install.log, error handling with user-visible messages
 - [x] **9.8** Installer Step: "Installation complete -- remove USB and reboot"
 - [ ] **9.9** Build installer ISO ⚠️ **BLOCKED — requires x86_64-linux build host**
-- [ ] **9.10** Test: boot USB on Chromebook, run installer, reboot into installed Stronk 1
-- [ ] **9.11** Verify: installed system boots to desktop without USB
-- [ ] **9.12** Verify: all 5 apps work on the installed system
-- [ ] **9.13** Verify: WiFi, audio, touchpad, keyboard all work on installed system
-- [ ] **9.14** Verify: no data loss, installer correctly partitions drive
-- [ ] **9.15** Time the full install process (target: under 30 minutes including firmware flash)
+- [ ] **9.10** Test: boot USB on Chromebook, run installer, reboot into installed Stronk 1 ⚠️ **BLOCKED — requires 9.9 + Chromebook hardware**
+- [ ] **9.11** Verify: installed system boots to desktop without USB ⚠️ **BLOCKED — requires 9.10**
+- [ ] **9.12** Verify: all 5 apps work on the installed system ⚠️ **BLOCKED — requires 9.10**
+- [ ] **9.13** Verify: WiFi, audio, touchpad, keyboard all work on installed system ⚠️ **BLOCKED — requires 9.10**
+- [ ] **9.14** Verify: no data loss, installer correctly partitions drive ⚠️ **BLOCKED — requires 9.10**
+- [ ] **9.15** Time the full install process (target: under 30 minutes including firmware flash) ⚠️ **BLOCKED — requires 9.10**
 
 ---
 
@@ -192,15 +192,15 @@ Build the installer that writes Stronk 1 from the USB to the Chromebook's intern
 
 Run through everything end-to-end before declaring the USB image done.
 
-- [ ] **10.1** Fresh Chromebook → firmware flash → USB boot → install → reboot → desktop (full flow, start to finish)
-- [ ] **10.2** Performance check: boot < 15s, idle RAM < 500MB, image < 800MB
-- [ ] **10.3** Privacy check: zero outbound connections for 10 min on fresh boot, zero telemetry
-- [ ] **10.4** App check: browser, file manager, terminal, settings, Forge stub all launch
-- [ ] **10.5** Hardware check: WiFi, audio, touchpad, keyboard, display, battery all functional
-- [ ] **10.6** Security check: firewall active, AppArmor active, no listening services
-- [ ] **10.7** Usability check: have a non-technical person attempt the install with written instructions
+- [ ] **10.1** Fresh Chromebook → firmware flash → USB boot → install → reboot → desktop (full flow, start to finish) ⚠️ **BLOCKED — requires completed build + Chromebook hardware**
+- [ ] **10.2** Performance check: boot < 15s, idle RAM < 500MB, image < 800MB ⚠️ **BLOCKED — requires 10.1**
+- [ ] **10.3** Privacy check: zero outbound connections for 10 min on fresh boot, zero telemetry ⚠️ **BLOCKED — requires 10.1**
+- [ ] **10.4** App check: browser, file manager, terminal, settings, Forge stub all launch ⚠️ **BLOCKED — requires 10.1**
+- [ ] **10.5** Hardware check: WiFi, audio, touchpad, keyboard, display, battery all functional ⚠️ **BLOCKED — requires 10.1**
+- [ ] **10.6** Security check: firewall active, AppArmor active, no listening services ⚠️ **BLOCKED — requires 10.1**
+- [ ] **10.7** Usability check: have a non-technical person attempt the install with written instructions ⚠️ **BLOCKED — requires 10.1**
 - [x] **10.8** Document the full installation guide (firmware flash + USB boot + install steps) — `docs/INSTALL.md`
-- [ ] **10.9** Tag the repo: `v0.1.0-alpha` -- first bootable Chromebook image
+- [ ] **10.9** Tag the repo: `v0.1.0-alpha` -- first bootable Chromebook image ⚠️ **BLOCKED — requires 10.1–10.7 passing**
 
 ---
 
