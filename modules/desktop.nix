@@ -8,6 +8,7 @@
   # COSMIC compositor + desktop shell
   # The nixos-cosmic flake module provides services.desktopManager.cosmic
   services.desktopManager.cosmic.enable = true;
+  services.desktopManager.cosmic.xwayland.enable = false; # Wayland-only, saves X11 deps
   services.displayManager.cosmic-greeter.enable = false; # No greeter — auto-login
 
   # ── Auto-login to COSMIC session (Step 4.4) ────────────────────────

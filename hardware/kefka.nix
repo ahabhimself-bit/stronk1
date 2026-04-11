@@ -27,10 +27,18 @@
     options snd-sof sof_debug=1
   '';
 
-  # Hardware-specific firmware
-  hardware.firmware = with pkgs; [
-    linux-firmware # Intel WiFi + GPU firmware
-    sof-firmware   # SOF topology for Braswell audio
+  # Hardware-specific firmware — Intel only (WiFi 7265 + i915 GPU)
+  # Full linux-firmware (~500MB) replaced with targeted Intel files (~50MB)
+  hardware.enableRedistributableFirmware = false;
+  hardware.firmware = let
+    stronk-firmware = pkgs.runCommand "stronk-firmware" { } ''
+      mkdir -p $out/lib/firmware/i915
+      cp ${pkgs.linux-firmware}/lib/firmware/iwlwifi-7265* $out/lib/firmware/
+      cp ${pkgs.linux-firmware}/lib/firmware/i915/* $out/lib/firmware/i915/
+    '';
+  in [
+    stronk-firmware
+    pkgs.sof-firmware   # SOF topology for Braswell audio
   ];
 
   # Intel GPU

@@ -44,6 +44,17 @@ let
         || baseName == "result");
   };
 
+  # Minimal firmware: only Intel WiFi + GPU for our target Chromebooks.
+  # Full linux-firmware is ~500MB and includes AMD, Qualcomm, MediaTek, etc.
+  # Our 3 targets all use Intel 7265 WiFi + Intel HD Graphics (i915).
+  stronk-firmware = pkgs.runCommand "stronk-firmware" { } ''
+    mkdir -p $out/lib/firmware/i915
+    # Intel 7265 WiFi firmware
+    cp ${pkgs.linux-firmware}/lib/firmware/iwlwifi-7265* $out/lib/firmware/
+    # Intel i915 GPU firmware (Braswell HD 400 + Apollo Lake HD 500)
+    cp ${pkgs.linux-firmware}/lib/firmware/i915/* $out/lib/firmware/i915/
+  '';
+
 in
 {
   # Include the installer, firmware guide, and desktop entry
@@ -64,10 +75,11 @@ in
   # Copy the flake source into the live image at /etc/stronk-flake
   environment.etc."stronk-flake".source = flake-source;
 
-  # Include hardware firmware in the live image so nixos-install can
-  # find them locally (enables offline installs for all target models)
-  hardware.firmware = with pkgs; [
-    linux-firmware
-    sof-firmware
+  # Include only the firmware needed for target Chromebooks (Intel WiFi + GPU + SOF audio).
+  # This replaces linux-firmware (~500MB) with ~50MB of Intel-specific files.
+  hardware.enableRedistributableFirmware = false;
+  hardware.firmware = [
+    stronk-firmware
+    pkgs.sof-firmware
   ];
 }

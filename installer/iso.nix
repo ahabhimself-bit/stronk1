@@ -19,6 +19,17 @@
   # Squashfs compression for smaller ISO
   isoImage.squashfsCompression = "zstd -Xcompression-level 19";
 
+  # ── Size optimization ────────────────────────────────────────────────
+
+  # Don't include full documentation
+  documentation.enable = false;
+  documentation.man.enable = false;
+  documentation.nixos.enable = false;
+
+  # Limit firmware to what our target hardware needs (Intel WiFi + GPU + audio)
+  hardware.enableAllFirmware = lib.mkForce false;
+  hardware.enableRedistributableFirmware = lib.mkForce false;
+
   # The live system should not try to mount internal storage filesystems.
   # Core.nix declares / and /boot with disk labels — override for live mode.
   fileSystems."/" = lib.mkForce {

@@ -28,9 +28,17 @@
     options snd-intel-dspcfg dsp_driver=4
   '';
 
-  hardware.firmware = with pkgs; [
-    linux-firmware
-    sof-firmware   # SOF topology files for Apollo Lake
+  # Hardware-specific firmware — Intel only (WiFi 7265 + i915 GPU)
+  hardware.enableRedistributableFirmware = false;
+  hardware.firmware = let
+    stronk-firmware = pkgs.runCommand "stronk-firmware" { } ''
+      mkdir -p $out/lib/firmware/i915
+      cp ${pkgs.linux-firmware}/lib/firmware/iwlwifi-7265* $out/lib/firmware/
+      cp ${pkgs.linux-firmware}/lib/firmware/i915/* $out/lib/firmware/i915/
+    '';
+  in [
+    stronk-firmware
+    pkgs.sof-firmware   # SOF topology files for Apollo Lake
   ];
 
   hardware.graphics.enable = true;
