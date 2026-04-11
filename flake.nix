@@ -7,8 +7,7 @@
 
     # COSMIC desktop packages
     nixos-cosmic = {
-      url = "github:liber-tas/nixos-cosmic";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:lilyinstarlight/nixos-cosmic";
     };
   };
 
