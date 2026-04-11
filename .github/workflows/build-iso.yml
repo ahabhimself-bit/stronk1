@@ -40,11 +40,6 @@ jobs:
             extra-substituters = https://cosmic.cachix.org
             extra-trusted-public-keys = cosmic.cachix.org-1:Dya9IyXD4HkqkjQ+kAP+HcqNPNSKY6HSPGHO4p9pis=
 
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
-        continue-on-error: true
-
       - name: Build ISO
         run: nix build .#packages.x86_64-linux.iso --print-build-logs
         timeout-minutes: 120
