@@ -7,7 +7,7 @@
 
     # COSMIC desktop packages
     nixos-cosmic = {
-      url = "github:lilyinstarlight/nixos-cosmic";
+      url = "github:lilyinstarlight/nixos-cosmic/7f49ed842533";
     };
   };
 
