@@ -19,21 +19,6 @@
   # Squashfs compression — xz with BCJ filter improves compression of x86 binaries
   isoImage.squashfsCompression = "xz -Xdict-size 100% -Xbcj x86";
 
-  # ── Replace unused COSMIC packages with empty stubs ───────────────────
-  # The COSMIC module installs the full suite. Overlay out the apps we don't ship.
-  nixpkgs.overlays = [
-    (final: prev: {
-      cosmic-edit = prev.runCommand "cosmic-edit-stub" { } "mkdir -p $out/bin $out/share/applications";
-      cosmic-player = prev.runCommand "cosmic-player-stub" { } "mkdir -p $out/bin $out/share/applications";
-      cosmic-wallpapers = prev.runCommand "cosmic-wallpapers-stub" { } "mkdir -p $out/share";
-      cosmic-greeter = prev.runCommand "cosmic-greeter-stub" { } "mkdir -p $out/bin";
-      pop-icon-theme = prev.runCommand "pop-icon-theme-stub" { } "mkdir -p $out/share/icons";
-      pop-launcher = prev.runCommand "pop-launcher-stub" { } "mkdir -p $out/bin";
-      # adwaita-icon-theme is added by COSMIC module — stub it out
-      adwaita-icon-theme = prev.runCommand "adwaita-icon-theme-stub" { } "mkdir -p $out/share/icons";
-    })
-  ];
-
   # ── Size optimization ────────────────────────────────────────────────
 
   # Don't include full documentation
