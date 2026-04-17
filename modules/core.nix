@@ -67,10 +67,7 @@
   environment.systemPackages = with pkgs; [
     coreutils
     util-linux
-    usbutils
-    pciutils
     iw              # WiFi diagnostics
-    lshw            # Hardware listing
   ];
 
   # ── systemd — minimal dependency chain (Step 3.2) ──────────────────

@@ -340,14 +340,6 @@ rm -f "$INSTALL_ERROR_FILE"
     log "Browser switch to Firefox completed and validated"
   fi
 
-  # Initialize git repo — required for Nix flake evaluation
-  if ! (cd "$MOUNT_POINT/etc/nixos" && \
-        git init && \
-        git -c user.name="Stronk" -c user.email="install@stronk.os" add -A && \
-        git -c user.name="Stronk" -c user.email="install@stronk.os" commit -m "Stronk 1 install"); then
-    install_fail "Failed to initialize git repository. Nix flakes require a git repo to evaluate.\n\nCheck $LOG_FILE for details."
-  fi
-
   # Re-check network if Firefox was selected (it requires download during install)
   if [[ "$BROWSER" == "firefox" ]] && ! has_network; then
     install_fail "Network connection lost. Firefox requires internet to install.\n\nPlease reconnect and retry, or restart the installer to choose Brave."
@@ -355,9 +347,9 @@ rm -f "$INSTALL_ERROR_FILE"
 
   echo "50"
   echo "# Installing Stronk 1 (this may take several minutes)..."
-  log "Running nixos-install --flake /mnt/etc/nixos#stronk-$MODEL"
+  log "Running nixos-install --flake path:$MOUNT_POINT/etc/nixos#stronk-$MODEL"
   nixos-install \
-    --flake "$MOUNT_POINT/etc/nixos#stronk-$MODEL" \
+    --flake "path:$MOUNT_POINT/etc/nixos#stronk-$MODEL" \
     --no-root-passwd \
     --no-channel-copy \
     2>&1 | tee -a "$LOG_FILE"

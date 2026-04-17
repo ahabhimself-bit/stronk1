@@ -99,11 +99,6 @@
     0.0.0.0 variations.brave.com
   '';
 
-  # ── Audit tools (for verification) ────────────────────────────────
-
-  environment.systemPackages = with pkgs; [
-    tcpdump     # Network monitoring for verification
-    iproute2    # ss command for checking listening ports
-    apparmor-utils # AppArmor management
-  ];
+  # Audit tools (tcpdump, apparmor-utils) can be installed later for verification.
+  # They are not shipped in the base image to minimize closure size.
 }

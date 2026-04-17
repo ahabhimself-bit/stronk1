@@ -23,7 +23,6 @@ let
       gnused
       gawk
       iputils         # ping (for network check)
-      git             # git init for flake eval
       nixos-install-tools
     ];
     text = builtins.readFile ./stronk-install.sh;
@@ -51,8 +50,15 @@ let
     mkdir -p $out/lib/firmware/i915
     # Intel 7265 WiFi firmware
     cp ${pkgs.linux-firmware}/lib/firmware/iwlwifi-7265* $out/lib/firmware/
-    # Intel i915 GPU firmware (Braswell HD 400 + Apollo Lake HD 500)
-    cp ${pkgs.linux-firmware}/lib/firmware/i915/* $out/lib/firmware/i915/
+    # Intel i915 GPU firmware — only the generations we target:
+    #   chv_* = Cherryview/Braswell (KEFKA/SETZER: N3060 HD 400)
+    #   bxt_* = Broxton/Apollo Lake (SNAPPY: N3350 HD 500)
+    # Full i915/ is ~80MB covering every Intel GPU ever; we need ~2MB.
+    for pattern in chv bxt; do
+      for f in ${pkgs.linux-firmware}/lib/firmware/i915/''${pattern}_*; do
+        [ -f "$f" ] && cp "$f" $out/lib/firmware/i915/
+      done
+    done
   '';
 
 in

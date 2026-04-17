@@ -16,8 +16,8 @@
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
 
-  # Squashfs compression — xz achieves ~10-15% better ratio than zstd for OS images
-  isoImage.squashfsCompression = "xz -Xdict-size 100%";
+  # Squashfs compression — xz with BCJ filter improves compression of x86 binaries
+  isoImage.squashfsCompression = "xz -Xdict-size 100% -Xbcj x86";
 
   # ── Size optimization ────────────────────────────────────────────────
 
@@ -29,6 +29,12 @@
   # Limit firmware to what our target hardware needs (Intel WiFi + GPU + audio)
   hardware.enableAllFirmware = lib.mkForce false;
   hardware.enableRedistributableFirmware = lib.mkForce false;
+
+  # Flatpak is not needed during live session — only after install to internal storage
+  services.flatpak.enable = lib.mkForce false;
+
+  # COSMIC's own portal is sufficient — drop the GTK fallback portal to save closure size
+  xdg.portal.extraPortals = lib.mkForce [ pkgs.xdg-desktop-portal-cosmic ];
 
   # The live system should not try to mount internal storage filesystems.
   # Core.nix declares / and /boot with disk labels — override for live mode.

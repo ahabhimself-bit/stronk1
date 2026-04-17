@@ -127,10 +127,10 @@ in
   #   toggle it in Settings → Accessibility. Our accent/semantic colors
   #   carry over automatically.
 
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = [
     stronk-cosmic-themes  # Deploys theme + wallpaper configs to $XDG_DATA_DIRS/cosmic/
     stronk-wallpapers     # SVG wallpapers in $XDG_DATA_DIRS/stronk/wallpapers/
-    adwaita-icon-theme    # Fallback icons for GTK apps
+    # COSMIC ships cosmic-icons; no separate GTK icon theme needed
   ];
 
   # ── Notification policy (Step 7.7) ─────────────────────────────────
