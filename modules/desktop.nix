@@ -46,14 +46,15 @@
   fonts = {
     # Disable default font packages (DejaVu, FreeFont, Liberation) to save ~50MB
     enableDefaultPackages = false;
-    packages = with pkgs; [
+    # mkForce overrides COSMIC module's additions (noto-fonts ~400MB, fira, open-sans)
+    packages = lib.mkForce (with pkgs; [
       # System UI
       inter                    # Clean, modern UI font
       # Monospace
       jetbrains-mono           # Terminal / code font
-      # Emoji only — full noto-fonts removed to save ~200MB
+      # Emoji only — full noto-fonts removed to save ~400MB
       noto-fonts-color-emoji
-    ];
+    ]);
 
     fontconfig = {
       defaultFonts = {

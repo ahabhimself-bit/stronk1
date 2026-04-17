@@ -36,6 +36,29 @@
   # COSMIC's own portal is sufficient — drop the GTK fallback portal to save closure size
   xdg.portal.extraPortals = lib.mkForce [ pkgs.xdg-desktop-portal-cosmic ];
 
+  # ── Disable services enabled by COSMIC module but not needed ─────────
+
+  # No Bluetooth on target Chromebooks (Intel 7265 supports it, but not needed for installer)
+  hardware.bluetooth.enable = lib.mkForce false;
+
+  # No GNOME keyring — we don't use GNOME apps or need a secret store in the live session
+  services.gnome.gnome-keyring.enable = lib.mkForce false;
+
+  # No GVFS — no network mounts or trash in the live session
+  services.gvfs.enable = lib.mkForce false;
+
+  # No speech dispatcher — saves ~50MB of speech synthesis deps
+  services.speechd.enable = lib.mkForce false;
+
+  # No ModemManager — Chromebooks don't have cellular modems
+  systemd.services.ModemManager.enable = lib.mkForce false;
+
+  # Strip NM VPN plugins — not needed for WiFi-only installer
+  networking.networkmanager.plugins = lib.mkForce [];
+
+  # No default packages (nano, perl, strace, etc.) — saves ~100MB
+  environment.defaultPackages = lib.mkForce [];
+
   # The live system should not try to mount internal storage filesystems.
   # Core.nix declares / and /boot with disk labels — override for live mode.
   fileSystems."/" = lib.mkForce {
