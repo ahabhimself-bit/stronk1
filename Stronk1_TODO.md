@@ -57,10 +57,10 @@ Get a bare-bones NixOS booting from USB on generic x86-64 hardware first, before
 - [x] **3.3** Disable all unnecessary systemd services declaratively (remote logging, network FS, printer discovery, etc.)
 - [x] **3.4** Configure journald: volatile storage, 50MB cap
 - [x] **3.5** Configure networking: NetworkManager or systemd-networkd for WiFi + Ethernet
-- [ ] **3.6** Build a bootable ISO image from the flake ⚠️ **BLOCKED — requires x86_64-linux build host**
-- [ ] **3.7** Write ISO to USB drive ⚠️ **BLOCKED — requires 3.6**
+- [x] **3.6** Build a bootable ISO image from the flake (GitHub Actions CI builds on every push)
+- [ ] **3.7** Write ISO to USB drive ⚠️ **BLOCKED — requires downloading CI artifact + USB drive**
 - [ ] **3.8** Boot the USB on any x86-64 machine -- verify you reach a TTY login ⚠️ **BLOCKED — requires 3.7**
-- [ ] **3.9** Verify image size (target: under 800MB) ⚠️ **BLOCKED — requires 3.6**
+- [ ] **3.9** Verify image size (target: under 800MB) ⚠️ **ISO is 1218MB** — COSMIC + Brave minimum floor is ~1.1GB. 800MB requires switching to Sway or deferring Brave to post-install.
 
 ---
 
@@ -74,7 +74,7 @@ Get a graphical desktop running on the bootable image.
 - [x] **4.4** Configure auto-login to desktop session (no login screen / no account needed)
 - [x] **4.5** Configure PipeWire for audio
 - [x] **4.6** Configure basic fonts (system UI font, monospace font)
-- [ ] **4.7** Rebuild ISO, write to USB, boot -- verify you reach a graphical desktop ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **4.7** Rebuild ISO, write to USB, boot -- verify you reach a graphical desktop ⚠️ **BLOCKED — requires USB + test machine**
 - [ ] **4.8** Verify idle RAM is under 500MB ⚠️ **BLOCKED — requires 4.7**
 - [ ] **4.9** Verify boot to desktop time (target: under 15 seconds, measured from UEFI handoff) ⚠️ **BLOCKED — requires 4.7**
 
@@ -90,7 +90,7 @@ Add the five apps that ship with Stronk 1. Nothing more.
 - [x] **5.4** System settings -- COSMIC Settings (included with COSMIC desktop)
 - [x] **5.5** The Forge client -- Stub app (zenity dialog placeholder, .desktop entry)
 - [ ] **5.6** Verify: exactly 5 user-facing apps in the app launcher, nothing else ⚠️ **BLOCKED — requires build**
-- [ ] **5.7** Rebuild ISO, write to USB, boot -- verify all 5 apps launch and work ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **5.7** Rebuild ISO, write to USB, boot -- verify all 5 apps launch and work ⚠️ **BLOCKED — requires USB + test hardware**
 - [ ] **5.8** Verify file manager opens in <=1 second ⚠️ **BLOCKED — requires 5.7**
 - [ ] **5.9** Verify terminal opens in <=500ms ⚠️ **BLOCKED — requires 5.7**
 
@@ -123,7 +123,7 @@ Make it look like Stronk, not stock NixOS.
 - [x] **7.5** Stronk branding in system settings "About" page (os-release configured in modules/theme.nix)
 - [ ] **7.6** App launcher styling consistent with Stronk theme ⚠️ **BLOCKED — requires COSMIC running**
 - [x] **7.7** Notification system: only user-relevant events, zero promotional content (enforced by app selection — no promo-capable apps)
-- [ ] **7.8** Rebuild ISO, boot, verify visual polish ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **7.8** Rebuild ISO, boot, verify visual polish ⚠️ **BLOCKED — requires USB + test hardware**
 
 ---
 
@@ -146,7 +146,7 @@ Make the image work specifically on your target Chromebook(s).
   - [x] Keyboard mapping (keyd: Search=Super, Search+toprow=F1-F10 — in desktop.nix shared module)
   - [x] Power management / battery optimization (thermald + TLP per model)
   - [x] Audio routing (KEFKA/SETZER: SOF+acpid for jack detection; SNAPPY: AVS for headphone support)
-- [ ] **8.4** Rebuild ISO with Chromebook hardware profile included ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **8.4** Rebuild ISO with Chromebook hardware profile included ⚠️ **BLOCKED — requires USB + test hardware**
 - [ ] **8.5** Boot USB on Chromebook -- verify desktop loads ⚠️ **BLOCKED — requires 8.4 + Chromebook hardware**
 - [ ] **8.6** Verify WiFi connects ⚠️ **BLOCKED — requires 8.5**
 - [ ] **8.7** Verify audio works (speakers + headphone jack) ⚠️ **BLOCKED — requires 8.5**
@@ -178,7 +178,7 @@ Build the installer that writes Stronk 1 from the USB to the Chromebook's intern
 - [x] **9.7** Installer Step: Install progress bar
   - zenity progress dialog, logs to /tmp/stronk-install.log, error handling with user-visible messages
 - [x] **9.8** Installer Step: "Installation complete -- remove USB and reboot"
-- [ ] **9.9** Build installer ISO ⚠️ **BLOCKED — requires x86_64-linux build host**
+- [ ] **9.9** Build installer ISO ⚠️ **BLOCKED — requires USB + test hardware**
 - [ ] **9.10** Test: boot USB on Chromebook, run installer, reboot into installed Stronk 1 ⚠️ **BLOCKED — requires 9.9 + Chromebook hardware**
 - [ ] **9.11** Verify: installed system boots to desktop without USB ⚠️ **BLOCKED — requires 9.10**
 - [ ] **9.12** Verify: all 5 apps work on the installed system ⚠️ **BLOCKED — requires 9.10**
