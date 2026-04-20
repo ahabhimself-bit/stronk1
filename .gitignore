@@ -2,6 +2,9 @@
 result
 result-*
 
+# Rust build artifacts
+forge/target/
+
 # Editor files
 *.swp
 *.swo

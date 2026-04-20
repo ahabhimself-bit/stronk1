@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=The Forge
+Comment=Discover apps, themes, and more for Stronk
+Exec=the-forge
+Icon=system-software-install
+Type=Application
+Categories=System;PackageManager;
+Keywords=apps;store;install;flatpak;
+StartupNotify=true
