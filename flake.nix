@@ -10,7 +10,7 @@
     let
       system = "x86_64-linux";
 
-      # Common modules shared by all configurations
+      # Common modules shared by all configurations (Phase 0 base)
       commonModules = [
         ./modules/core.nix
         ./modules/desktop.nix
@@ -18,10 +18,17 @@
         ./modules/security.nix
         ./modules/theme.nix
       ];
+
+      # Phase 1 additions (daily-driver features)
+      phase1Modules = [
+        ./modules/compat.nix
+      ];
     in
     {
       # NixOS system configurations
       nixosConfigurations = {
+
+        # ── Phase 0: Bootable USB image ──────────────────────────────
 
         # Generic x86-64 image (for testing on any UEFI machine)
         stronk-generic = nixpkgs.lib.nixosSystem {
@@ -49,6 +56,29 @@
         stronk-snappy = nixpkgs.lib.nixosSystem {
           inherit system;
           modules = commonModules ++ [
+            ./hardware/snappy.nix
+          ];
+        };
+
+        # ── Phase 1: Daily-driver builds (includes Windows compat) ───
+
+        stronk-kefka-full = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = commonModules ++ phase1Modules ++ [
+            ./hardware/kefka.nix
+          ];
+        };
+
+        stronk-setzer-full = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = commonModules ++ phase1Modules ++ [
+            ./hardware/setzer.nix
+          ];
+        };
+
+        stronk-snappy-full = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = commonModules ++ phase1Modules ++ [
             ./hardware/snappy.nix
           ];
         };

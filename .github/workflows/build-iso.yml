@@ -16,7 +16,13 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Evaluate all NixOS configurations
         run: |
+          echo "── Phase 0 configs ──"
           for cfg in stronk-generic stronk-kefka stronk-setzer stronk-snappy; do
+            echo "Evaluating $cfg..."
+            nix eval ".#nixosConfigurations.$cfg.config.system.stateVersion"
+          done
+          echo "── Phase 1 configs (daily-driver) ──"
+          for cfg in stronk-kefka-full stronk-setzer-full stronk-snappy-full; do
             echo "Evaluating $cfg..."
             nix eval ".#nixosConfigurations.$cfg.config.system.stateVersion"
           done
