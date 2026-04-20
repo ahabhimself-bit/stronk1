@@ -9,6 +9,13 @@ pub struct InstalledApp {
     pub origin: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct UpdateInfo {
+    pub app_id: String,
+    pub name: String,
+    pub remote_version: String,
+}
+
 pub async fn list_installed() -> Result<Vec<InstalledApp>, String> {
     let output = Command::new("flatpak")
         .args(["list", "--app", "--columns=application,name,version,origin"])
@@ -85,6 +92,60 @@ pub async fn update(app_id: String) -> Result<String, String> {
 
     if output.status.success() {
         Ok(app_id)
+    } else {
+        Err(format!(
+            "Update failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ))
+    }
+}
+
+pub async fn check_updates() -> Result<Vec<UpdateInfo>, String> {
+    let output = Command::new("flatpak")
+        .args([
+            "remote-ls",
+            "--user",
+            "--updates",
+            "--columns=application,name,version",
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to check updates: {}", e))?;
+
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let updates = stdout
+        .lines()
+        .filter(|line| !line.is_empty())
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split('\t').collect();
+            if parts.len() >= 3 {
+                Some(UpdateInfo {
+                    app_id: parts[0].to_string(),
+                    name: parts[1].to_string(),
+                    remote_version: parts[2].to_string(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Ok(updates)
+}
+
+pub async fn update_all() -> Result<String, String> {
+    let output = Command::new("flatpak")
+        .args(["update", "--user", "-y"])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run flatpak update: {}", e))?;
+
+    if output.status.success() {
+        Ok("All apps updated".to_string())
     } else {
         Err(format!(
             "Update failed: {}",
