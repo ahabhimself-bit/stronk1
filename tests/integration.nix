@@ -79,8 +79,8 @@ pkgs.nixosTest {
     # ── Apps: The Forge stub is installed ────────────────────────────
     machine.succeed("which the-forge")
 
-    # ── Apps: Flatpak service is active ──────────────────────────────
-    machine.succeed("systemctl is-active flatpak-system-helper.service || systemctl is-enabled flatpak-system-helper.service")
+    # ── Apps: Flatpak installed (system helper is D-Bus activated on demand) ──
+    machine.succeed("flatpak --version")
 
     # ── Kernel hardening ─────────────────────────────────────────────
     dmesg_restrict = machine.succeed("cat /proc/sys/kernel/dmesg_restrict").strip()
