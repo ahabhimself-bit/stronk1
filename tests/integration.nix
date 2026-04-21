@@ -35,7 +35,7 @@ pkgs.nixosTest {
     listening = machine.succeed("ss -tulnp")
     print(f"Listening sockets:\n{listening}")
 
-    tcp_listeners = machine.succeed("ss -tlnp | grep LISTEN | wc -l").strip()
+    tcp_listeners = machine.succeed("ss -Htlnp | wc -l").strip()
     assert tcp_listeners == "0", f"Expected 0 TCP listeners, got {tcp_listeners}"
 
     # ── Security: firewall active ────────────────────────────────────
@@ -53,7 +53,7 @@ pkgs.nixosTest {
     # ── Privacy: no outbound connections at idle ─────────────────────
     import time
     time.sleep(5)
-    connections = machine.succeed("ss -tunp | grep -v 'State' | wc -l").strip()
+    connections = machine.succeed("ss -Htunp | wc -l").strip()
     print(f"Active connections after 5s idle: {connections}")
     # Allow 0 established connections (NetworkManager may briefly connect for captive portal check,
     # but we disabled connectivity checking in security.nix)
