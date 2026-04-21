@@ -60,12 +60,14 @@ pkgs.nixosTest {
     else:
         print("No active connections after 10s idle")
 
-    # NTP (port 123) via systemd-timesyncd is essential for TLS cert validation.
-    # Filter it out — this check targets telemetry/tracking, not system infra.
+    # Filter essential network infrastructure — this check targets telemetry/tracking.
+    # DHCP (67/68): NetworkManager lease maintenance, required for IP connectivity
+    # NTP (123): systemd-timesyncd, required for TLS cert validation
+    infra_ports = {':67 ', ':67\t', ':68 ', ':68\t', ':123 ', ':123\t'}
     lines = [l for l in all_conns.split('\n') if l.strip()]
-    unexpected = [l for l in lines if ':123 ' not in l and ':123\t' not in l]
+    unexpected = [l for l in lines if not any(p in l for p in infra_ports)]
     assert len(unexpected) == 0, \
-        f"Expected 0 non-NTP connections, got {len(unexpected)}:\n" + '\n'.join(unexpected)
+        f"Expected 0 non-infrastructure connections, got {len(unexpected)}:\n" + '\n'.join(unexpected)
 
     # ── Desktop: COSMIC session running ──────────────────────────────
     machine.succeed("pgrep -u stronk cosmic-session || pgrep -u stronk cosmic-comp")
