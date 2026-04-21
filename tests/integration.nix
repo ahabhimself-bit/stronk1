@@ -50,14 +50,22 @@ pkgs.nixosTest {
     machine.wait_for_unit("pipewire.service", "stronk", timeout=30)
     machine.wait_for_unit("wireplumber.service", "stronk", timeout=30)
 
-    # ── Privacy: no outbound connections at idle ─────────────────────
+    # ── Privacy: no unexpected outbound connections at idle ────────────
     import time
-    time.sleep(5)
-    connections = machine.succeed("ss -Htunp | wc -l").strip()
-    print(f"Active connections after 5s idle: {connections}")
-    # Allow 0 established connections (NetworkManager may briefly connect for captive portal check,
-    # but we disabled connectivity checking in security.nix)
-    assert int(connections) == 0, f"Expected 0 active connections, got {connections}"
+    time.sleep(10)
+
+    all_conns = machine.succeed("ss -Htunp").strip()
+    if all_conns:
+        print(f"Active connections after 10s idle:\n{all_conns}")
+    else:
+        print("No active connections after 10s idle")
+
+    # NTP (port 123) via systemd-timesyncd is essential for TLS cert validation.
+    # Filter it out — this check targets telemetry/tracking, not system infra.
+    lines = [l for l in all_conns.split('\n') if l.strip()]
+    unexpected = [l for l in lines if ':123 ' not in l and ':123\t' not in l]
+    assert len(unexpected) == 0, \
+        f"Expected 0 non-NTP connections, got {len(unexpected)}:\n" + '\n'.join(unexpected)
 
     # ── Desktop: COSMIC session running ──────────────────────────────
     machine.succeed("pgrep -u stronk cosmic-session || pgrep -u stronk cosmic-comp")
