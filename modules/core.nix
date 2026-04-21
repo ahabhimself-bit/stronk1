@@ -58,10 +58,6 @@
     auto-optimise-store = true;
   };
 
-  # Default to no unfree packages — GPL v3 project
-  # apps.nix overrides this for Brave browser
-  nixpkgs.config.allowUnfree = lib.mkDefault false;
-
   # ── Minimal base packages ──────────────────────────────────────────
 
   environment.systemPackages = with pkgs; [

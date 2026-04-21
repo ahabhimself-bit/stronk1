@@ -4,7 +4,12 @@
 { config, pkgs, lib, ... }:
 
 {
-  assertions = [
+  options.stronk.isLiveISO = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+  };
+
+  config.assertions = [
     # ── Security baseline ────────────────────────────────────────────
     {
       assertion = config.networking.firewall.enable;
@@ -43,7 +48,7 @@
       message = "Stronk requires Firejail for browser sandboxing";
     }
     {
-      assertion = config.services.flatpak.enable;
+      assertion = config.stronk.isLiveISO || config.services.flatpak.enable;
       message = "Stronk requires Flatpak for The Forge app installs";
     }
 

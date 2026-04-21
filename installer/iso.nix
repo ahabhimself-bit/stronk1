@@ -30,6 +30,8 @@
   hardware.enableAllFirmware = lib.mkForce false;
   hardware.enableRedistributableFirmware = lib.mkForce false;
 
+  stronk.isLiveISO = true;
+
   # Flatpak is not needed during live session — only after install to internal storage
   services.flatpak.enable = lib.mkForce false;
 

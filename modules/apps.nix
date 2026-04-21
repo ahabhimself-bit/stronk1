@@ -9,11 +9,6 @@
 { config, pkgs, lib, ... }:
 
 {
-  # ── Allow Brave (proprietary) — required for default browser ──────────
-  # Brave is unfree; this is the only unfree package we ship.
-  # If the installer swaps to Firefox, this setting is harmless.
-  nixpkgs.config.allowUnfree = true;
-
   # ── Flatpak runtime for The Forge (future app installs) ────────────
   services.flatpak.enable = true;
 
