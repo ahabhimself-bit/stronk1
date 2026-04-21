@@ -63,4 +63,22 @@
 
   # ── 4. System settings — COSMIC Settings (Step 5.4) ───────────────
   # COSMIC Settings is included with services.desktopManager.cosmic
+
+  # ── Hide extra COSMIC apps from launcher (Step 5.6) ───────────────
+  # COSMIC ships additional apps we don't want visible. Only 5 user-facing
+  # apps should appear: Brave, COSMIC Files, COSMIC Terminal, COSMIC Settings, The Forge.
+  # Override .desktop files with NoDisplay=true so they remain installed but hidden.
+  environment.etc = lib.listToAttrs (map (id: {
+    name = "xdg/applications/${id}.desktop";
+    value.text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=${id}
+      NoDisplay=true
+    '';
+  }) [
+    "com.system76.CosmicStore"
+    "com.system76.CosmicTextEditor"
+    "com.system76.CosmicEdit"
+  ]);
 }

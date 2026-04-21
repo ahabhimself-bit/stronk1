@@ -5,13 +5,12 @@ use cosmic::Element;
 use crate::{Forge, Message, Page};
 
 pub fn view<'a>(app: &'a Forge, app_id: &'a str) -> Element<'a, Message> {
-    let mut col = widget::column::with_capacity(6).spacing(12).width(Length::Fill);
+    let mut col = widget::column::with_capacity(8).spacing(12).width(Length::Fill);
 
     col = col.push(
         widget::button::text("Back to Browse").on_press(Message::NavigateTo(Page::Browse)),
     );
 
-    // Find app in catalog or installed list
     let catalog_entry = app.catalog.iter().find(|a| a.app_id == app_id);
     let installed_entry = app.installed.iter().find(|a| a.app_id == app_id);
 
@@ -37,7 +36,25 @@ pub fn view<'a>(app: &'a Forge, app_id: &'a str) -> Element<'a, Message> {
         col = col.push(widget::text::body(format!("Source: {}", entry.origin)));
     }
 
-    // Actions
+    // Permissions — shown prominently BEFORE install action
+    col = col.push(
+        widget::container(
+            widget::column::with_capacity(6)
+                .push(widget::text::title4("Permissions"))
+                .push(widget::text::body(
+                    "Stronk enforces strict sandboxing. Review what this app can access:",
+                ))
+                .push(permission_row("Filesystem", "Sandboxed — no access to home or host. Files shared via portal only."))
+                .push(permission_row("Network", if catalog_entry.map(|c| c.categories.as_ref().map(|cats| cats.iter().any(|c| c.name == "Network")).unwrap_or(false)).unwrap_or(false) { "Allowed — app may connect to the internet" } else { "Allowed — sandboxed apps may request network" }))
+                .push(permission_row("Display", "Wayland only — no X11 screen capture"))
+                .push(permission_row("Devices", "No direct device access. Portals mediate camera/microphone."))
+                .spacing(6),
+        )
+        .padding(12)
+        .class(cosmic::theme::Container::Card),
+    );
+
+    // Actions — placed after permissions so user reviews before installing
     let is_installed = installed_entry.is_some();
     let mut actions = widget::row::with_capacity(2).spacing(8);
 
@@ -58,19 +75,17 @@ pub fn view<'a>(app: &'a Forge, app_id: &'a str) -> Element<'a, Message> {
 
     col = col.push(actions);
 
-    // Permissions notice
-    col = col.push(
-        widget::container(
-            widget::column::with_capacity(2)
-                .push(widget::text::title4("Permissions"))
-                .push(widget::text::body(
-                    "Stronk enforces strict sandboxing. This app runs in a Flatpak sandbox with limited filesystem access. File access is granted through portals on demand."
-                ))
-                .spacing(4),
-        )
-        .padding(12)
-        .class(cosmic::theme::Container::Card),
-    );
-
     col.into()
+}
+
+fn permission_row<'a>(label: &'a str, detail: &'a str) -> Element<'a, Message> {
+    widget::row::with_capacity(2)
+        .push(
+            widget::text::body(label)
+                .width(Length::Fixed(100.0)),
+        )
+        .push(widget::text::caption(detail))
+        .spacing(8)
+        .align_y(cosmic::iced::Alignment::Start)
+        .into()
 }

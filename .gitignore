@@ -4,6 +4,7 @@ result-*
 
 # Rust build artifacts
 forge/target/
+forge-backend/target/
 
 # Editor files
 *.swp

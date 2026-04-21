@@ -17,6 +17,7 @@
         ./modules/apps.nix
         ./modules/security.nix
         ./modules/theme.nix
+        ./modules/assertions.nix
       ];
 
       # Phase 1 additions (daily-driver features)
@@ -92,6 +93,14 @@
             ./installer/iso.nix
           ];
         }).config.system.build.isoImage;
+      };
+
+      # Integration tests — run in QEMU VMs, no hardware needed
+      checks.${system} = {
+        integration = import ./tests/integration.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          inherit commonModules;
+        };
       };
     };
 }

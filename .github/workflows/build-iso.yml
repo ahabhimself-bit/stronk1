@@ -8,6 +8,20 @@ on:
   workflow_dispatch: # Manual trigger
 
 jobs:
+  forge-backend:
+    name: Forge backend (check + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: forge-backend
+      - name: Check
+        run: cargo check --manifest-path forge-backend/Cargo.toml
+      - name: Test
+        run: cargo test --manifest-path forge-backend/Cargo.toml
+
   evaluate:
     name: Evaluate flake
     runs-on: ubuntu-latest
@@ -28,6 +42,67 @@ jobs:
           done
           echo "Evaluating ISO derivation..."
           nix eval .#packages.x86_64-linux.iso.name
+
+      - name: "CI gate: security assertions"
+        run: |
+          echo "── Verifying security invariants ──"
+          FAIL=0
+          check() {
+            local cfg=$1 path=$2 expect=$3 label=$4
+            val=$(nix eval ".#nixosConfigurations.$cfg.config.$path" 2>&1)
+            if [ "$val" = "$expect" ]; then
+              echo "  PASS: $label = $val"
+            else
+              echo "  FAIL: $label = $val (expected $expect)"
+              FAIL=1
+            fi
+          }
+          for cfg in stronk-generic stronk-kefka stronk-setzer stronk-snappy; do
+            echo "── $cfg ──"
+            check $cfg networking.firewall.enable          true  "firewall"
+            check $cfg security.apparmor.enable            true  "apparmor"
+            check $cfg networking.nftables.enable           true  "nftables"
+            check $cfg services.pulseaudio.enable           false "no-pulseaudio"
+            check $cfg services.pipewire.enable            true  "pipewire"
+            check $cfg services.pipewire.wireplumber.enable true  "wireplumber"
+            check $cfg system.autoUpgrade.enable           false "no-auto-upgrade"
+            check $cfg programs.firejail.enable            true  "firejail"
+            check $cfg services.flatpak.enable             true  "flatpak"
+            check $cfg services.desktopManager.cosmic.enable          true  "cosmic"
+            check $cfg services.desktopManager.cosmic.xwayland.enable false "no-xwayland"
+          done
+          if [ "$FAIL" = "1" ]; then
+            echo "Security assertion(s) failed!"
+            exit 1
+          fi
+          echo "All security assertions passed."
+
+      - name: "CI gate: verify security config values"
+        run: |
+          CFG=".#nixosConfigurations.stronk-generic.config"
+          echo "Firewall: $(nix eval $CFG.networking.firewall.enable)"
+          echo "AppArmor: $(nix eval $CFG.security.apparmor.enable)"
+          echo "nftables: $(nix eval $CFG.networking.nftables.enable)"
+          echo "PipeWire: $(nix eval $CFG.services.pipewire.enable)"
+          echo "PulseAudio: $(nix eval $CFG.services.pulseaudio.enable)"
+          echo "Auto-upgrade: $(nix eval $CFG.system.autoUpgrade.enable)"
+          echo "Firejail: $(nix eval $CFG.programs.firejail.enable)"
+          echo "Flatpak: $(nix eval $CFG.services.flatpak.enable)"
+          echo "COSMIC: $(nix eval $CFG.services.desktopManager.cosmic.enable)"
+          echo "XWayland: $(nix eval $CFG.services.desktopManager.cosmic.xwayland.enable)"
+          echo "Open TCP ports: $(nix eval $CFG.networking.firewall.allowedTCPPorts --json)"
+          echo "Open UDP ports: $(nix eval $CFG.networking.firewall.allowedUDPPorts --json)"
+
+  integration-test:
+    name: Integration tests (VM)
+    needs: evaluate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Run NixOS VM integration tests
+        run: nix build .#checks.x86_64-linux.integration --print-build-logs
+        timeout-minutes: 60
 
   build:
     name: Build ISO

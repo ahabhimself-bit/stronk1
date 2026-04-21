@@ -27,7 +27,7 @@
   # ── PipeWire audio (Step 4.5) ──────────────────────────────────────
 
   # Disable PulseAudio — PipeWire replaces it
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
 
   # Enable PipeWire + compatibility layers
   services.pipewire = {

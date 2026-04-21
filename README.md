@@ -77,6 +77,8 @@ installer/
   installer.nix      # Installer module (packages script + flake source)
   stronk-install.sh  # Installer wizard (zenity + nixos-install)
   stronk-firmware-guide.sh  # Firmware flash instructions
+forge/               # COSMIC-native Forge client (Rust/Iced)
+forge-backend/       # Forge backend API (Axum + PostgreSQL + S3)
 ```
 
 ## License
