@@ -1,5 +1,21 @@
 use serde::Deserialize;
+use std::fmt::Write;
 use tokio::process::Command;
+
+fn url_encode(input: &str) -> String {
+    let mut encoded = String::with_capacity(input.len() * 3);
+    for byte in input.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            _ => {
+                let _ = write!(encoded, "%{:02X}", byte);
+            }
+        }
+    }
+    encoded
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppInfo {
@@ -47,7 +63,7 @@ async fn fetch_json(url: &str) -> Result<String, String> {
 }
 
 pub async fn search(query: String) -> Result<Vec<AppInfo>, String> {
-    let url = format!("{}/search?q={}&locale=en", FLATHUB_API, query);
+    let url = format!("{}/search?q={}&locale=en", FLATHUB_API, url_encode(&query));
     let json = fetch_json(&url).await?;
     let response: SearchResponse =
         serde_json::from_str(&json).map_err(|e| format!("Parse error: {}", e))?;
@@ -63,7 +79,7 @@ pub async fn fetch_popular() -> Result<Vec<AppInfo>, String> {
 }
 
 pub async fn fetch_category(category: String) -> Result<Vec<AppInfo>, String> {
-    let url = format!("{}/category/{}", FLATHUB_API, category);
+    let url = format!("{}/category/{}", FLATHUB_API, url_encode(&category));
     let json = fetch_json(&url).await?;
     let apps: Vec<AppInfo> =
         serde_json::from_str(&json).map_err(|e| format!("Parse error: {}", e))?;
@@ -71,7 +87,7 @@ pub async fn fetch_category(category: String) -> Result<Vec<AppInfo>, String> {
 }
 
 pub async fn fetch_app_detail(app_id: &str) -> Result<AppInfo, String> {
-    let url = format!("{}/appstream/{}", FLATHUB_API, app_id);
+    let url = format!("{}/appstream/{}", FLATHUB_API, url_encode(app_id));
     let json = fetch_json(&url).await?;
     serde_json::from_str(&json).map_err(|e| format!("Parse error: {}", e))
 }

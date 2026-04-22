@@ -42,7 +42,7 @@ pub async fn submit(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    let _ = db::log_audit(
+    if let Err(e) = db::log_audit(
         &state.db,
         app.id,
         "submitted",
@@ -51,7 +51,10 @@ pub async fn submit(
             "version": metadata.version,
         })),
     )
-    .await;
+    .await
+    {
+        error!("Failed to log audit for submission {}: {}", app.id, e);
+    }
 
     info!("New submission: {} ({})", app.name, app.flatpak_id);
 

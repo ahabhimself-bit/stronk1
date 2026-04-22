@@ -10,7 +10,8 @@ use std::sync::Arc;
 use axum::routing::{get, post};
 use axum::Router;
 use sqlx::PgPool;
-use tower_http::cors::CorsLayer;
+use axum::http::{header, Method};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing::info;
 
@@ -35,6 +36,7 @@ async fn main() {
 
     let config = Config::from_env();
     let listen_addr = config.listen_addr.clone();
+    let allowed_origins = config.allowed_origins.clone();
 
     let pool = db::connect(&config.database_url)
         .await
@@ -63,7 +65,16 @@ async fn main() {
             get(routes::submissions::status),
         )
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(AllowOrigin::list(
+                    allowed_origins
+                        .iter()
+                        .filter_map(|o| o.parse().ok()),
+                ))
+                .allow_methods([Method::GET, Method::POST])
+                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
+        )
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&listen_addr)
