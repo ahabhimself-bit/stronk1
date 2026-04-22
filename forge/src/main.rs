@@ -40,6 +40,8 @@ pub enum Message {
     Uninstall(String),
     Update(String),
     CatalogLoaded(Result<Vec<AppInfo>, String>),
+    AppDetailLoaded(Result<AppInfo, String>),
+    PermissionsLoaded(Result<Vec<String>, String>),
     InstalledLoaded(Result<Vec<InstalledApp>, String>),
     InstallComplete(Result<String, String>),
     UninstallComplete(Result<String, String>),
@@ -65,6 +67,8 @@ pub struct Forge {
     selected_category: Option<String>,
     pub sort_order: SortOrder,
     pub hide_installed: bool,
+    pub detail_info: Option<AppInfo>,
+    pub detail_permissions: Vec<String>,
 }
 
 impl Application for Forge {
@@ -95,6 +99,8 @@ impl Application for Forge {
             selected_category: None,
             sort_order: SortOrder::Default,
             hide_installed: false,
+            detail_info: None,
+            detail_permissions: Vec::new(),
         };
 
         let cmd = cosmic::task::batch::<Message, _>(vec![
@@ -121,8 +127,26 @@ impl Application for Forge {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NavigateTo(page) => {
-                self.page = page;
-                Task::none()
+                if let Page::AppDetail(ref app_id) = page {
+                    self.detail_info = None;
+                    self.detail_permissions.clear();
+                    let id = app_id.clone();
+                    let id2 = app_id.clone();
+                    let is_installed = self.installed.iter().any(|a| a.app_id == *app_id);
+                    self.page = page;
+                    let mut tasks = vec![cosmic::task::future(async move {
+                        Message::AppDetailLoaded(flathub::fetch_app_detail(&id).await)
+                    })];
+                    if is_installed {
+                        tasks.push(cosmic::task::future(async move {
+                            Message::PermissionsLoaded(flatpak::get_permissions(&id2).await)
+                        }));
+                    }
+                    cosmic::task::batch::<Message, _>(tasks)
+                } else {
+                    self.page = page;
+                    Task::none()
+                }
             }
 
             Message::SearchChanged(query) => {
@@ -164,6 +188,20 @@ impl Application for Forge {
                 match result {
                     Ok(apps) => self.catalog = apps,
                     Err(e) => self.status_message = Some(format!("Failed to load catalog: {}", e)),
+                }
+                Task::none()
+            }
+
+            Message::AppDetailLoaded(result) => {
+                if let Ok(info) = result {
+                    self.detail_info = Some(info);
+                }
+                Task::none()
+            }
+
+            Message::PermissionsLoaded(result) => {
+                if let Ok(perms) = result {
+                    self.detail_permissions = perms;
                 }
                 Task::none()
             }

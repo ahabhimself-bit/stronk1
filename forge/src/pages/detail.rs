@@ -11,7 +11,8 @@ pub fn view<'a>(app: &'a Forge, app_id: &'a str) -> Element<'a, Message> {
         widget::button::text("Back to Browse").on_press(Message::NavigateTo(Page::Browse)),
     );
 
-    let catalog_entry = app.catalog.iter().find(|a| a.app_id == app_id);
+    let detail = app.detail_info.as_ref();
+    let catalog_entry = detail.or_else(|| app.catalog.iter().find(|a| a.app_id == app_id));
     let installed_entry = app.installed.iter().find(|a| a.app_id == app_id);
 
     let name = catalog_entry
@@ -29,29 +30,40 @@ pub fn view<'a>(app: &'a Forge, app_id: &'a str) -> Element<'a, Message> {
         if let Some(summary) = &entry.summary {
             col = col.push(widget::text::body(summary));
         }
+        if let Some(ver) = &entry.version {
+            col = col.push(widget::text::body(format!("Latest version: {}", ver)));
+        }
     }
 
     if let Some(entry) = installed_entry {
-        col = col.push(widget::text::body(format!("Version: {}", entry.version)));
+        col = col.push(widget::text::body(format!("Installed version: {}", entry.version)));
         col = col.push(widget::text::body(format!("Source: {}", entry.origin)));
     }
 
     // Permissions — shown prominently BEFORE install action
+    let mut perms_col = widget::column::with_capacity(8)
+        .push(widget::text::title4("Permissions"))
+        .push(widget::text::body(
+            "Stronk enforces strict sandboxing. Review what this app can access:",
+        ))
+        .spacing(6);
+
+    if app.detail_permissions.is_empty() {
+        perms_col = perms_col
+            .push(permission_row("Filesystem", "Sandboxed — no access to home or host. Files shared via portal only."))
+            .push(permission_row("Network", if catalog_entry.map(|c| c.categories.as_ref().map(|cats| cats.iter().any(|c| c.name == "Network")).unwrap_or(false)).unwrap_or(false) { "Allowed — app may connect to the internet" } else { "Allowed — sandboxed apps may request network" }))
+            .push(permission_row("Display", "Wayland only — no X11 screen capture"))
+            .push(permission_row("Devices", "No direct device access. Portals mediate camera/microphone."));
+    } else {
+        for perm in &app.detail_permissions {
+            perms_col = perms_col.push(widget::text::body(perm));
+        }
+    }
+
     col = col.push(
-        widget::container(
-            widget::column::with_capacity(6)
-                .push(widget::text::title4("Permissions"))
-                .push(widget::text::body(
-                    "Stronk enforces strict sandboxing. Review what this app can access:",
-                ))
-                .push(permission_row("Filesystem", "Sandboxed — no access to home or host. Files shared via portal only."))
-                .push(permission_row("Network", if catalog_entry.map(|c| c.categories.as_ref().map(|cats| cats.iter().any(|c| c.name == "Network")).unwrap_or(false)).unwrap_or(false) { "Allowed — app may connect to the internet" } else { "Allowed — sandboxed apps may request network" }))
-                .push(permission_row("Display", "Wayland only — no X11 screen capture"))
-                .push(permission_row("Devices", "No direct device access. Portals mediate camera/microphone."))
-                .spacing(6),
-        )
-        .padding(12)
-        .class(cosmic::theme::Container::Card),
+        widget::container(perms_col)
+            .padding(12)
+            .class(cosmic::theme::Container::Card),
     );
 
     // Actions — placed after permissions so user reviews before installing
