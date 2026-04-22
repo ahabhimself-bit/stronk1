@@ -140,7 +140,8 @@ mc mb local/forge-packages
 
 ```sh
 cd forge-backend
-DATABASE_URL=postgres://forge:forge@localhost/forge cargo run
+S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin \
+  DATABASE_URL=postgres://forge:forge@localhost/forge cargo run
 ```
 
 The server starts on `http://localhost:3000`. Migrations run automatically on startup.
@@ -154,9 +155,10 @@ The server starts on `http://localhost:3000`. Migrations run automatically on st
 | `S3_ENDPOINT` | `http://localhost:9000` | S3-compatible endpoint |
 | `S3_BUCKET` | `forge-packages` | Storage bucket name |
 | `S3_REGION` | `us-east-1` | S3 region |
-| `S3_ACCESS_KEY` | `minioadmin` | S3 access key |
-| `S3_SECRET_KEY` | `minioadmin` | S3 secret key |
+| `S3_ACCESS_KEY` | *(required)* | S3 access key |
+| `S3_SECRET_KEY` | *(required)* | S3 secret key |
 | `CLAMAV_ADDR` | `localhost:3310` | ClamAV daemon TCP address |
+| `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated CORS allowed origins |
 | `RUST_LOG` | `forge_backend=info` | Log level (tracing filter) |
 
 ### API endpoints
