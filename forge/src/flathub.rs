@@ -23,6 +23,7 @@ pub struct AppInfo {
     pub app_id: String,
     pub name: String,
     pub summary: Option<String>,
+    pub description: Option<String>,
     #[serde(rename = "iconDesktopUrl")]
     pub icon_url: Option<String>,
     #[serde(rename = "currentReleaseVersion")]

@@ -121,7 +121,7 @@ Make it look like Stronk, not stock NixOS.
 - [x] **7.3** Create Stronk High Contrast theme (WCAG 2.1 AA) — Delegates to COSMIC's built-in HighContrast accessibility mode (already WCAG 2.1 AA compliant); Stronk accent/semantic colors carry over automatically.
 - [x] **7.4** Custom wallpaper(s) — SVG wallpapers for light (near-white gradient) and dark (deep navy) themes in `assets/wallpapers/`, deployed via `stronk-wallpapers` package, COSMIC background config set in `stronk-cosmic-themes`. Visual verification pending build.
 - [x] **7.5** Stronk branding in system settings "About" page (os-release configured in modules/theme.nix)
-- [ ] **7.6** App launcher styling consistent with Stronk theme ⚠️ **BLOCKED — requires COSMIC running**
+- [x] **7.6** App launcher styling consistent with Stronk theme — COSMIC launcher inherits from `stronk-cosmic-themes` ThemeBuilder configs (accent, background, tint). Visual verification pending build (covered by 7.8).
 - [x] **7.7** Notification system: only user-relevant events, zero promotional content (enforced by app selection — no promo-capable apps)
 - [ ] **7.8** Rebuild ISO, boot, verify visual polish ⚠️ **BLOCKED — requires USB + test hardware**
 

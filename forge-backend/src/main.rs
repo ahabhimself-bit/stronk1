@@ -7,6 +7,7 @@ mod storage;
 
 use std::sync::Arc;
 
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 use sqlx::PgPool;
@@ -59,7 +60,11 @@ async fn main() {
         .route("/api/v1/apps", get(routes::apps::list))
         .route("/api/v1/apps/{id}", get(routes::apps::detail))
         .route("/api/v1/apps/{id}/download", post(routes::apps::download))
-        .route("/api/v1/submissions", post(routes::submissions::submit))
+        .route(
+            "/api/v1/submissions",
+            post(routes::submissions::submit)
+                .layer(DefaultBodyLimit::max(500 * 1024 * 1024)),
+        )
         .route(
             "/api/v1/submissions/{id}/status",
             get(routes::submissions::status),
