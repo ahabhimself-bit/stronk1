@@ -35,6 +35,11 @@ pub async fn submit(
     let metadata = metadata.ok_or(StatusCode::BAD_REQUEST)?;
     let bundle_data = bundle_data.ok_or(StatusCode::BAD_REQUEST)?;
 
+    metadata.validate().map_err(|e| {
+        error!("Submission validation failed: {}", e);
+        StatusCode::BAD_REQUEST
+    })?;
+
     let app = db::insert_app(&state.db, &metadata)
         .await
         .map_err(|e| {
@@ -65,13 +70,17 @@ pub async fn submit(
     let clamav_addr = state.config.clamav_addr.clone();
 
     tokio::spawn(async move {
-        let _ = db::set_app_status(&db, app_id, SubmissionStatus::Scanning).await;
+        if let Err(e) = db::set_app_status(&db, app_id, SubmissionStatus::Scanning).await {
+            error!("Failed to set scanning status for {}: {}", app_id, e);
+        }
 
         let tmp = match write_temp_bundle(&bundle_data).await {
             Ok(t) => t,
             Err(e) => {
                 error!("Failed to write temp bundle: {}", e);
-                let _ = db::set_app_status(&db, app_id, SubmissionStatus::Rejected).await;
+                if let Err(e) = db::set_app_status(&db, app_id, SubmissionStatus::Rejected).await {
+                    error!("Failed to set rejected status for {}: {}", app_id, e);
+                }
                 return;
             }
         };
@@ -80,20 +89,27 @@ pub async fn submit(
             Ok(s) => s,
             Err(e) => {
                 error!("Scan failed for {}: {}", flatpak_id, e);
-                let _ = db::set_app_status(&db, app_id, SubmissionStatus::Rejected).await;
+                if let Err(e) = db::set_app_status(&db, app_id, SubmissionStatus::Rejected).await {
+                    error!("Failed to set rejected status for {}: {}", app_id, e);
+                }
                 return;
             }
         };
 
         let report = serde_json::to_value(&scan).unwrap_or_default();
-        let _ = db::update_scan_result(&db, app_id, scan.passed, &report).await;
-        let _ = db::log_audit(
+        if let Err(e) = db::update_scan_result(&db, app_id, scan.passed, &report).await {
+            error!("Failed to update scan result for {}: {}", app_id, e);
+        }
+        if let Err(e) = db::log_audit(
             &db,
             app_id,
             if scan.passed { "scan_passed" } else { "scan_rejected" },
             Some(&report),
         )
-        .await;
+        .await
+        {
+            error!("Failed to log scan audit for {}: {}", app_id, e);
+        }
 
         if scan.passed {
             let key = format!("bundles/{}/{}.flatpak", flatpak_id, app_id);
@@ -102,7 +118,9 @@ pub async fn submit(
                     let permissions = scanner::extract_permissions_metadata(
                         &extract_perms_from_report(&report),
                     );
-                    let _ = db::set_download_url(&db, app_id, &url, &permissions).await;
+                    if let Err(e) = db::set_download_url(&db, app_id, &url, &permissions).await {
+                        error!("Failed to set download URL for {}: {}", app_id, e);
+                    }
                     info!("Approved and uploaded: {} → {}", flatpak_id, url);
                 }
                 Err(e) => {
