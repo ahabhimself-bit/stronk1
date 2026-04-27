@@ -203,6 +203,16 @@ pub async fn log_audit(
     Ok(())
 }
 
+pub async fn set_upload_failed(pool: &PgPool, app_id: Uuid) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE apps SET status = 'approved', download_url = NULL, updated_at = now() WHERE id = $1",
+    )
+    .bind(app_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn increment_downloads(pool: &PgPool, app_id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query("UPDATE apps SET downloads = downloads + 1 WHERE id = $1")
         .bind(app_id)

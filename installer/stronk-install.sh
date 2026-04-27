@@ -7,6 +7,7 @@ FLAKE_SOURCE="/etc/stronk-flake"
 MOUNT_POINT="/mnt"
 LOG_FILE="/tmp/stronk-install.log"
 INSTALL_ERROR_FILE="/tmp/stronk-install-error"
+PARTITIONED=false
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -17,6 +18,15 @@ die() {
 
 log() {
   echo "[$(date '+%H:%M:%S')] $*" >> "$LOG_FILE"
+}
+
+cleanup() {
+  log "Cleanup: unmounting filesystems"
+  umount -R "$MOUNT_POINT" 2>/dev/null || true
+  if [[ "$PARTITIONED" == true && -n "${SELECTED_DISK:-}" ]]; then
+    log "Cleanup: wiping partition table from $SELECTED_DISK"
+    wipefs -a "$SELECTED_DISK" 2>/dev/null || true
+  fi
 }
 
 # Return partition device path (handles nvme/mmcblk vs sd/vd naming)
@@ -245,15 +255,15 @@ rm -f "$INSTALL_ERROR_FILE"
   # Redirect stderr to log; stdout goes to zenity progress via pipe
   exec 2>>"$LOG_FILE"
 
+  trap cleanup EXIT
+
   echo "5"
   echo "# Unmounting target disk..."
-  # Unmount any existing mounts on the target disk
   umount -R "$MOUNT_POINT" 2>/dev/null || true
   for part in "${SELECTED_DISK}"*; do
     umount "$part" 2>/dev/null || true
   done
 
-  # Verify target disk has at least 4GB (needed for NixOS install)
   DISK_BYTES=$(lsblk -bdno SIZE "$SELECTED_DISK" 2>/dev/null || echo 0)
   if [[ "$DISK_BYTES" -lt 4294967296 ]]; then
     install_fail "Target disk is smaller than 4GB. Stronk 1 requires at least 4GB of disk space."
@@ -265,6 +275,7 @@ rm -f "$INSTALL_ERROR_FILE"
   if ! parted -s "$SELECTED_DISK" mklabel gpt; then
     install_fail "Failed to create partition table on $SELECTED_DISK"
   fi
+  PARTITIONED=true
   if ! parted -s "$SELECTED_DISK" mkpart ESP fat32 1MiB 512MiB; then
     install_fail "Failed to create EFI partition on $SELECTED_DISK"
   fi
@@ -295,52 +306,23 @@ rm -f "$INSTALL_ERROR_FILE"
   mkdir -p "$MOUNT_POINT/etc/nixos"
   cp -r "$FLAKE_SOURCE"/* "$MOUNT_POINT/etc/nixos/"
 
-  # Apply user choices to the copied configuration
   log "Applying user choices: timezone=$TIMEZONE, browser=$BROWSER"
 
-  # Set timezone (escape sed metacharacters in timezone string)
+  # Set timezone
   TIMEZONE_ESCAPED=$(printf '%s\n' "$TIMEZONE" | sed 's/[&/\]/\\&/g')
   sed -i "s|time.timeZone = \"UTC\";|time.timeZone = \"$TIMEZONE_ESCAPED\";|" \
     "$MOUNT_POINT/etc/nixos/modules/core.nix"
 
-  # Browser choice: if Firefox, swap Brave for Firefox in apps.nix and security.nix
-  if [[ "$BROWSER" == "firefox" ]]; then
-    log "Switching browser to Firefox"
-    APPS="$MOUNT_POINT/etc/nixos/modules/apps.nix"
-    SEC="$MOUNT_POINT/etc/nixos/modules/security.nix"
+  # Browser choice: write a NixOS module overlay instead of sed-replacing config files
+  cat > "$MOUNT_POINT/etc/nixos/modules/browser-choice.nix" <<NIXEOF
+{ ... }:
+{
+  stronk.browser = "$BROWSER";
+}
+NIXEOF
+  log "Wrote browser-choice.nix: stronk.browser = \"$BROWSER\""
 
-    # apps.nix: replace browser package and marker
-    sed -i 's/# INSTALLER_BROWSER: brave/# INSTALLER_BROWSER: firefox/' "$APPS"
-    sed -i 's/brave # Privacy-focused Chromium fork/firefox # Open source browser/' "$APPS"
-    # apps.nix: replace MIME associations
-    sed -i 's/# INSTALLER_MIME: brave-browser.desktop/# INSTALLER_MIME: firefox.desktop/' "$APPS"
-    sed -i 's/brave-browser\.desktop/firefox.desktop/g' "$APPS"
-
-    # Validate browser swap succeeded
-    if ! grep -q 'firefox # Open source browser' "$APPS"; then
-      install_fail "Failed to switch browser to Firefox in apps.nix"
-    fi
-
-    # security.nix: replace Firejail profile
-    sed -i 's|brave = {|firefox = {|' "$SEC"
-    # shellcheck disable=SC2016
-    sed -i 's|\${pkgs.brave}/bin/brave|\${pkgs.firefox}/bin/firefox|' "$SEC"
-    sed -i 's|chromium-browser.profile|firefox.profile|' "$SEC"
-
-    # Validate Firejail browser swap succeeded
-    if ! grep -q 'firefox = {' "$SEC"; then
-      install_fail "Failed to switch Firejail profile to Firefox in security.nix"
-    fi
-
-    # security.nix: swap Brave telemetry blocks for Firefox ones
-    sed -i 's|0.0.0.0 telemetry.brave.com|0.0.0.0 telemetry.mozilla.org|' "$SEC"
-    sed -i 's|0.0.0.0 laptop-updates.brave.com|0.0.0.0 incoming.telemetry.mozilla.org|' "$SEC"
-    sed -i 's|0.0.0.0 variations.brave.com|0.0.0.0 normandy.cdn.mozilla.net|' "$SEC"
-
-    log "Browser switch to Firefox completed and validated"
-  fi
-
-  # Re-check network if Firefox was selected (it requires download during install)
+  # Re-check network if Firefox was selected (not cached on USB)
   if [[ "$BROWSER" == "firefox" ]] && ! has_network; then
     install_fail "Network connection lost. Firefox requires internet to install.\n\nPlease reconnect and retry, or restart the installer to choose Brave."
   fi
@@ -353,6 +335,10 @@ rm -f "$INSTALL_ERROR_FILE"
     --no-root-passwd \
     --no-channel-copy \
     2>&1 | tee -a "$LOG_FILE"
+
+  # Installation succeeded — disarm cleanup trap
+  PARTITIONED=false
+  trap - EXIT
 
   echo "90"
   echo "# Finalizing installation..."
@@ -372,7 +358,6 @@ rm -f "$INSTALL_ERROR_FILE"
   --width=450 \
   || {
     log "Installation failed — see $LOG_FILE"
-    # Show specific error if available, otherwise generic message
     ERROR_MSG="Installation failed. Check the log at:\n$LOG_FILE\n\nYou can open a terminal to investigate."
     if [[ -f "$INSTALL_ERROR_FILE" ]]; then
       ERROR_MSG=$(cat "$INSTALL_ERROR_FILE")
@@ -382,7 +367,7 @@ rm -f "$INSTALL_ERROR_FILE"
       --title="Installation Failed" \
       --text="$ERROR_MSG" \
       --width=400
-    umount -R "$MOUNT_POINT" 2>/dev/null || true
+    cleanup
     exit 1
   }
 

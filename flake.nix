@@ -15,6 +15,8 @@
         ./modules/core.nix
         ./modules/desktop.nix
         ./modules/apps.nix
+        ./modules/browser.nix
+        ./modules/browser-choice.nix
         ./modules/security.nix
         ./modules/theme.nix
         ./modules/assertions.nix

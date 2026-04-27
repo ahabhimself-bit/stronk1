@@ -113,18 +113,51 @@ pub async fn submit(
 
         if scan.passed {
             let key = format!("bundles/{}/{}.flatpak", flatpak_id, app_id);
-            match storage.upload(&key, &bundle_data, "application/vnd.flatpak").await {
-                Ok(url) => {
-                    let permissions = scanner::extract_permissions_metadata(
-                        &extract_perms_from_report(&report),
-                    );
-                    if let Err(e) = db::set_download_url(&db, app_id, &url, &permissions).await {
-                        error!("Failed to set download URL for {}: {}", app_id, e);
+            let mut upload_ok = false;
+            for attempt in 0..3 {
+                match storage.upload(&key, &bundle_data, "application/vnd.flatpak").await {
+                    Ok(url) => {
+                        let permissions = scanner::extract_permissions_metadata(
+                            &extract_perms_from_report(&report),
+                        );
+                        if let Err(e) = db::set_download_url(&db, app_id, &url, &permissions).await
+                        {
+                            error!("Failed to set download URL for {}: {}", app_id, e);
+                        }
+                        info!("Approved and uploaded: {} → {}", flatpak_id, url);
+                        upload_ok = true;
+                        break;
                     }
-                    info!("Approved and uploaded: {} → {}", flatpak_id, url);
+                    Err(e) => {
+                        let delay = std::time::Duration::from_secs(2u64.pow(attempt));
+                        error!(
+                            "S3 upload failed for {} (attempt {}/3): {} — retrying in {:?}",
+                            flatpak_id,
+                            attempt + 1,
+                            e,
+                            delay
+                        );
+                        tokio::time::sleep(delay).await;
+                    }
                 }
-                Err(e) => {
-                    error!("S3 upload failed for {}: {}", flatpak_id, e);
+            }
+            if !upload_ok {
+                error!(
+                    "S3 upload permanently failed for {} after 3 attempts — marking as pending upload",
+                    flatpak_id
+                );
+                if let Err(e) = db::set_upload_failed(&db, app_id).await {
+                    error!("Failed to mark upload failure for {}: {}", app_id, e);
+                }
+                if let Err(e) = db::log_audit(
+                    &db,
+                    app_id,
+                    "upload_failed",
+                    Some(&serde_json::json!({"retries": 3})),
+                )
+                .await
+                {
+                    error!("Failed to log upload failure audit for {}: {}", app_id, e);
                 }
             }
         } else {

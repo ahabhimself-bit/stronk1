@@ -32,6 +32,15 @@ pub enum SortOrder {
 }
 
 #[derive(Debug, Clone)]
+pub enum RetryAction {
+    LoadCatalog,
+    LoadCategory(String),
+    Search(String),
+    LoadDetail(String),
+    CheckUpdates,
+}
+
+#[derive(Debug, Clone)]
 pub enum Message {
     NavigateTo(Page),
     SearchChanged(String),
@@ -53,6 +62,7 @@ pub enum Message {
     CategorySelected(String),
     SortChanged(SortOrder),
     FilterInstalled(bool),
+    Retry,
 }
 
 pub struct Forge {
@@ -64,6 +74,8 @@ pub struct Forge {
     pub pending_updates: Vec<UpdateInfo>,
     loading: bool,
     status_message: Option<String>,
+    pub error_message: Option<String>,
+    pub retry_action: Option<RetryAction>,
     selected_category: Option<String>,
     pub sort_order: SortOrder,
     pub hide_installed: bool,
@@ -96,6 +108,8 @@ impl Application for Forge {
             pending_updates: Vec::new(),
             loading: true,
             status_message: None,
+            error_message: None,
+            retry_action: None,
             selected_category: None,
             sort_order: SortOrder::Default,
             hide_installed: false,
@@ -157,6 +171,8 @@ impl Application for Forge {
             Message::SearchSubmit => {
                 let query = self.search_query.clone();
                 self.loading = true;
+                self.error_message = None;
+                self.retry_action = Some(RetryAction::Search(query.clone()));
                 cosmic::task::future(async move {
                     Message::CatalogLoaded(flathub::search(query).await)
                 })
@@ -186,15 +202,32 @@ impl Application for Forge {
             Message::CatalogLoaded(result) => {
                 self.loading = false;
                 match result {
-                    Ok(apps) => self.catalog = apps,
-                    Err(e) => self.status_message = Some(format!("Failed to load catalog: {}", e)),
+                    Ok(apps) => {
+                        self.catalog = apps;
+                        self.error_message = None;
+                    }
+                    Err(e) => {
+                        self.error_message = Some(format!("Failed to load catalog: {}", e));
+                        if self.retry_action.is_none() {
+                            self.retry_action = Some(RetryAction::LoadCatalog);
+                        }
+                    }
                 }
                 Task::none()
             }
 
             Message::AppDetailLoaded(result) => {
-                if let Ok(info) = result {
-                    self.detail_info = Some(info);
+                match result {
+                    Ok(info) => {
+                        self.detail_info = Some(info);
+                        self.error_message = None;
+                    }
+                    Err(e) => {
+                        if let Page::AppDetail(ref id) = self.page {
+                            self.error_message = Some(format!("Failed to load app details: {}", e));
+                            self.retry_action = Some(RetryAction::LoadDetail(id.clone()));
+                        }
+                    }
                 }
                 Task::none()
             }
@@ -266,8 +299,9 @@ impl Application for Forge {
                         self.pending_updates = updates;
                     }
                     Err(e) => {
-                        self.status_message =
+                        self.error_message =
                             Some(format!("Failed to check updates: {}", e));
+                        self.retry_action = Some(RetryAction::CheckUpdates);
                     }
                 }
                 Task::none()
@@ -309,9 +343,44 @@ impl Application for Forge {
             Message::CategorySelected(category) => {
                 self.selected_category = Some(category.clone());
                 self.loading = true;
+                self.error_message = None;
+                self.retry_action = Some(RetryAction::LoadCategory(category.clone()));
                 cosmic::task::future(async move {
                     Message::CatalogLoaded(flathub::fetch_category(category).await)
                 })
+            }
+
+            Message::Retry => {
+                self.error_message = None;
+                match self.retry_action.take() {
+                    Some(RetryAction::LoadCatalog) => {
+                        self.loading = true;
+                        cosmic::task::future(async {
+                            Message::CatalogLoaded(flathub::fetch_popular().await)
+                        })
+                    }
+                    Some(RetryAction::LoadCategory(cat)) => {
+                        self.loading = true;
+                        cosmic::task::future(async move {
+                            Message::CatalogLoaded(flathub::fetch_category(cat).await)
+                        })
+                    }
+                    Some(RetryAction::Search(query)) => {
+                        self.loading = true;
+                        cosmic::task::future(async move {
+                            Message::CatalogLoaded(flathub::search(query).await)
+                        })
+                    }
+                    Some(RetryAction::LoadDetail(id)) => {
+                        cosmic::task::future(async move {
+                            Message::AppDetailLoaded(flathub::fetch_app_detail(&id).await)
+                        })
+                    }
+                    Some(RetryAction::CheckUpdates) => cosmic::task::future(async {
+                        Message::UpdatesChecked(flatpak::check_updates().await)
+                    }),
+                    None => Task::none(),
+                }
             }
         }
     }
@@ -351,7 +420,17 @@ impl Application for Forge {
             .padding(16)
             .width(Length::Fill);
 
-        if let Some(msg) = &self.status_message {
+        if let Some(err) = &self.error_message {
+            let mut error_row = widget::row::with_capacity(2)
+                .push(widget::text::body(err))
+                .spacing(8)
+                .align_y(cosmic::iced::Alignment::Center);
+            if self.retry_action.is_some() {
+                error_row = error_row
+                    .push(widget::button::suggested("Retry").on_press(Message::Retry));
+            }
+            layout = layout.push(error_row);
+        } else if let Some(msg) = &self.status_message {
             layout = layout.push(widget::text::body(msg));
         }
 

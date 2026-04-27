@@ -53,21 +53,9 @@
   };
 
   # ── Firejail sandboxing (Step 6.1) ────────────────────────────────
+  # Browser-specific Firejail profile is in modules/browser.nix
 
-  programs.firejail = {
-    enable = true;
-    wrappedBinaries = {
-      brave = {
-        executable = "${pkgs.brave}/bin/brave";
-        profile = "${pkgs.firejail}/etc/firejail/chromium-browser.profile";
-        extraArgs = [
-          "--seccomp"
-          "--noroot"
-          "--caps.drop=all"
-        ];
-      };
-    };
-  };
+  programs.firejail.enable = true;
 
   # ── Flatpak sandboxing policy (Phase 1) ───────────────────────────
   # Deny dangerous permissions system-wide. Individual apps get only
@@ -103,10 +91,5 @@
     };
   };
 
-  networking.extraHosts = ''
-    # Stronk 1: Block telemetry endpoints (Brave — swapped by installer for Firefox)
-    0.0.0.0 telemetry.brave.com
-    0.0.0.0 laptop-updates.brave.com
-    0.0.0.0 variations.brave.com
-  '';
+  # Telemetry host blocks are in modules/browser.nix (browser-specific)
 }

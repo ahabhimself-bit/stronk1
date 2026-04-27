@@ -1,7 +1,7 @@
 # Stronk 1 — Pre-installed applications
 # Step 5: Exactly 5 user-facing apps. Nothing more.
 #
-# 1. Web browser     — Brave (Firefox available via installer choice)
+# 1. Web browser     — Configured via stronk.browser option (modules/browser.nix)
 # 2. File manager    — COSMIC Files
 # 3. Terminal        — COSMIC Terminal
 # 4. System settings — COSMIC Settings
@@ -12,15 +12,10 @@
   # ── Flatpak runtime for The Forge (future app installs) ────────────
   services.flatpak.enable = true;
 
-  # ── 1. Web browser — Brave (Step 5.1) ──────────────────────────────
-  # INSTALLER_BROWSER: brave
-  # The installer sed-replaces the browser block below when Firefox is chosen.
+  # ── 1. Web browser — see modules/browser.nix (stronk.browser option)
 
   environment.systemPackages = with pkgs; [
-    brave # Privacy-focused Chromium fork
-
     # ── 5. The Forge — Stub app (Step 5.5) ───────────────────────────
-    # Placeholder that opens an about page. Replaced with Rust/Iced client in Phase 1.
     (writeShellApplication {
       name = "the-forge";
       runtimeInputs = [ zenity ];
@@ -40,14 +35,6 @@
       categories = [ "System" "PackageManager" ];
     })
   ];
-
-  # Set Brave as default browser
-  # INSTALLER_MIME: brave-browser.desktop
-  xdg.mime.defaultApplications = {
-    "text/html" = "brave-browser.desktop";
-    "x-scheme-handler/http" = "brave-browser.desktop";
-    "x-scheme-handler/https" = "brave-browser.desktop";
-  };
 
   # ── 2. File manager — COSMIC Files (Step 5.2) ─────────────────────
   # COSMIC Files is included with services.desktopManager.cosmic
