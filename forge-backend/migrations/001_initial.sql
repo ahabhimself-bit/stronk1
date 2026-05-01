@@ -1,13 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TYPE submission_status AS ENUM (
-    'pending',
-    'scanning',
-    'approved',
-    'rejected'
-);
+DO $$ BEGIN
+    CREATE TYPE submission_status AS ENUM (
+        'pending',
+        'scanning',
+        'approved',
+        'rejected'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE apps (
+CREATE TABLE IF NOT EXISTS apps (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     flatpak_id TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -28,7 +31,7 @@ CREATE TABLE apps (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE submission_audit_log (
+CREATE TABLE IF NOT EXISTS submission_audit_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     app_id UUID NOT NULL REFERENCES apps(id),
     action TEXT NOT NULL,
@@ -36,7 +39,7 @@ CREATE TABLE submission_audit_log (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_apps_flatpak_id ON apps(flatpak_id);
-CREATE INDEX idx_apps_status ON apps(status);
-CREATE INDEX idx_apps_category ON apps(category);
-CREATE INDEX idx_audit_app_id ON submission_audit_log(app_id);
+CREATE INDEX IF NOT EXISTS idx_apps_flatpak_id ON apps(flatpak_id);
+CREATE INDEX IF NOT EXISTS idx_apps_status ON apps(status);
+CREATE INDEX IF NOT EXISTS idx_apps_category ON apps(category);
+CREATE INDEX IF NOT EXISTS idx_audit_app_id ON submission_audit_log(app_id);

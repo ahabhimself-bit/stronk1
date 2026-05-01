@@ -187,7 +187,7 @@ fn categorize_permissions(raw: &[String]) -> Vec<(&'static str, Vec<String>)> {
             for socket in parts.split(';').filter(|s| !s.is_empty()) {
                 match socket {
                     "wayland" | "x11" | "fallback-x11" => display.push(socket.to_string()),
-                    "pulseaudio" => network.push("audio (PulseAudio)".to_string()),
+                    "pulseaudio" => other.push("audio (PulseAudio)".to_string()),
                     _ => other.push(format!("socket: {}", socket)),
                 }
             }

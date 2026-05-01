@@ -45,6 +45,10 @@ pub async fn download(
         })?
         .ok_or(StatusCode::NOT_FOUND)?;
 
+    if app.status != crate::models::SubmissionStatus::Approved {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
     let url = app.download_url.ok_or(StatusCode::NOT_FOUND)?;
 
     let _ = db::increment_downloads(&state.db, id).await;

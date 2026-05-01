@@ -66,18 +66,25 @@ async fn scan_clamav(path: &Path, addr: String) -> Result<bool, String> {
 }
 
 async fn extract_permissions(bundle_path: &Path) -> Result<Vec<String>, String> {
-    let output = Command::new("flatpak")
-        .args([
-            "info",
-            "--show-permissions",
-            "--file-access",
-            bundle_path.to_str().ok_or("Invalid path")?,
-        ])
-        .output()
-        .await
-        .map_err(|e| format!("Failed to extract permissions: {}", e))?;
+    let path_str = bundle_path.to_str().ok_or("Invalid bundle path")?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let output = Command::new("flatpak")
+        .args(["info", "--show-metadata", "--file-access", path_str])
+        .output()
+        .await;
+
+    let stdout = match output {
+        Ok(ref o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
+        _ => {
+            let fallback = Command::new("flatpak")
+                .args(["info", "--show-metadata", path_str])
+                .output()
+                .await
+                .map_err(|e| format!("Failed to extract permissions: {}", e))?;
+            String::from_utf8_lossy(&fallback.stdout).to_string()
+        }
+    };
+
     Ok(stdout
         .lines()
         .map(|l| l.trim().to_string())

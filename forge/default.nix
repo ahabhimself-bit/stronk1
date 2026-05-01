@@ -1,11 +1,8 @@
 { lib
 , rustPlatform
-, libcosmic
 , pkg-config
 , libxkbcommon
 , wayland
-, flatpak
-, curl
 , copyDesktopItems
 , makeDesktopItem
 }:

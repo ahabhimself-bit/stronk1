@@ -71,7 +71,7 @@ pub async fn list_apps(pool: &PgPool, query: &ListQuery) -> Result<Vec<AppListin
 
     let rows = match (&query.category, &query.search) {
         (Some(cat), Some(search)) => {
-            let pattern = format!("%{}%", search);
+            let pattern = format!("%{}%", search.replace('%', r"\%").replace('_', r"\_"));
             sqlx::query_as::<_, App>(
                 "SELECT * FROM apps WHERE status = 'approved' AND category = $1 AND (name ILIKE $2 OR summary ILIKE $2) ORDER BY downloads DESC LIMIT $3 OFFSET $4",
             )
@@ -93,7 +93,7 @@ pub async fn list_apps(pool: &PgPool, query: &ListQuery) -> Result<Vec<AppListin
             .await?
         }
         (None, Some(search)) => {
-            let pattern = format!("%{}%", search);
+            let pattern = format!("%{}%", search.replace('%', r"\%").replace('_', r"\_"));
             sqlx::query_as::<_, App>(
                 "SELECT * FROM apps WHERE status = 'approved' AND (name ILIKE $1 OR summary ILIKE $1) ORDER BY downloads DESC LIMIT $2 OFFSET $3",
             )
@@ -205,7 +205,7 @@ pub async fn log_audit(
 
 pub async fn set_upload_failed(pool: &PgPool, app_id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "UPDATE apps SET status = 'approved', download_url = NULL, updated_at = now() WHERE id = $1",
+        "UPDATE apps SET status = 'rejected', download_url = NULL, scan_report = jsonb_build_object('error', 'S3 upload failed after retries'), updated_at = now() WHERE id = $1",
     )
     .bind(app_id)
     .execute(pool)
