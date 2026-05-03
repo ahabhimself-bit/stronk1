@@ -16,7 +16,7 @@
 
   environment.systemPackages = [
     # ── 5. The Forge — COSMIC-native app store ───────────────────────
-    (pkgs.callPackage ../forge {})
+    pkgs.the-forge
   ];
 
   # ── 2. File manager — COSMIC Files (Step 5.2) ─────────────────────
