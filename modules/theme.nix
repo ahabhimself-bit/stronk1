@@ -122,6 +122,8 @@ in
   #   toggle it in Settings → Accessibility. Our accent/semantic colors
   #   carry over automatically.
 
+  environment.pathsToLink = [ "/share/stronk" ];
+
   environment.systemPackages = [
     stronk-cosmic-themes  # Deploys theme configs + wallpapers to $XDG_DATA_DIRS
   ];
