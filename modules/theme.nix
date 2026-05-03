@@ -26,12 +26,10 @@ let
   # SVG wallpapers for light and dark modes. COSMIC's background config
   # points to these paths under $XDG_DATA_DIRS/stronk/wallpapers/.
 
-  wallpaperDir = ../assets/wallpapers;
-
   stronk-wallpapers = pkgs.runCommand "stronk-wallpapers" {} ''
     mkdir -p $out/share/stronk/wallpapers
-    cp ${wallpaperDir}/stronk-light.svg $out/share/stronk/wallpapers/
-    cp ${wallpaperDir}/stronk-dark.svg  $out/share/stronk/wallpapers/
+    cp ${../assets/wallpapers/stronk-light.svg} $out/share/stronk/wallpapers/stronk-light.svg
+    cp ${../assets/wallpapers/stronk-dark.svg}  $out/share/stronk/wallpapers/stronk-dark.svg
   '';
 
   stronk-cosmic-themes = pkgs.runCommand "stronk-cosmic-themes" { } ''
