@@ -62,13 +62,8 @@
   # what they need via XDG Desktop Portals (file chooser, screen share).
   # The Forge enforces this at submission time; this is defense-in-depth.
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/flatpak/overrides 0755 root root -"
-  ];
-
-  environment.etc."flatpak-global-override" = {
-    target = "../var/lib/flatpak/overrides/global";
-    text = ''
+  systemd.tmpfiles.rules = let
+    flatpakOverride = pkgs.writeText "flatpak-global-override" ''
       [Context]
       filesystems=!host;!home;!host-etc;!host-os;xdg-download;
 
@@ -79,7 +74,10 @@
       [Environment]
       GTK_USE_PORTAL=1
     '';
-  };
+  in [
+    "d /var/lib/flatpak/overrides 0755 root root -"
+    "C+ /var/lib/flatpak/overrides/global 0644 root root - ${flatpakOverride}"
+  ];
 
   # ── No telemetry, no tracking, no analytics (Steps 6.5-6.9) ───────
 
