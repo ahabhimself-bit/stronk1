@@ -105,3 +105,73 @@ pub const CATEGORIES: &[&str] = &[
     "System",
     "Utility",
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn url_encode_passthrough() {
+        assert_eq!(url_encode("hello"), "hello");
+        assert_eq!(url_encode("A-Z_0.9~test"), "A-Z_0.9~test");
+    }
+
+    #[test]
+    fn url_encode_special_chars() {
+        assert_eq!(url_encode("hello world"), "hello%20world");
+        assert_eq!(url_encode("a+b=c"), "a%2Bb%3Dc");
+        assert_eq!(url_encode("100%"), "100%25");
+    }
+
+    #[test]
+    fn url_encode_unicode() {
+        let encoded = url_encode("café");
+        assert!(encoded.starts_with("caf"));
+        assert!(encoded.contains('%'));
+    }
+
+    #[test]
+    fn url_encode_empty() {
+        assert_eq!(url_encode(""), "");
+    }
+
+    #[test]
+    fn deserialize_app_info() {
+        let json = r#"{
+            "flatpakAppId": "org.test.App",
+            "name": "Test App",
+            "summary": "A test",
+            "description": "<p>Full description</p>",
+            "iconDesktopUrl": "https://example.com/icon.png",
+            "currentReleaseVersion": "1.0",
+            "developerName": "Test Dev",
+            "categories": [{"name": "Utility"}]
+        }"#;
+        let app: AppInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(app.app_id, "org.test.App");
+        assert_eq!(app.name, "Test App");
+        assert_eq!(app.summary.as_deref(), Some("A test"));
+        assert_eq!(app.developer.as_deref(), Some("Test Dev"));
+        assert_eq!(app.categories.as_ref().unwrap()[0].name, "Utility");
+    }
+
+    #[test]
+    fn deserialize_app_info_minimal() {
+        let json = r#"{"flatpakAppId": "org.test.App", "name": "App"}"#;
+        let app: AppInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(app.app_id, "org.test.App");
+        assert!(app.summary.is_none());
+        assert!(app.version.is_none());
+    }
+
+    #[test]
+    fn deserialize_search_response() {
+        let json = r#"{"hits": [
+            {"flatpakAppId": "org.a.A", "name": "A"},
+            {"flatpakAppId": "org.b.B", "name": "B"}
+        ]}"#;
+        let resp: SearchResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.hits.len(), 2);
+        assert_eq!(resp.hits[0].app_id, "org.a.A");
+    }
+}

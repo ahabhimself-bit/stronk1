@@ -5,35 +5,18 @@
 # 2. File manager    — COSMIC Files
 # 3. Terminal        — COSMIC Terminal
 # 4. System settings — COSMIC Settings
-# 5. The Forge       — Stub app (placeholder)
+# 5. The Forge       — COSMIC-native app store
 { config, pkgs, lib, ... }:
 
 {
-  # ── Flatpak runtime for The Forge (future app installs) ────────────
+  # ── Flatpak runtime for The Forge (app installs) ───────────────────
   services.flatpak.enable = true;
 
   # ── 1. Web browser — see modules/browser.nix (stronk.browser option)
 
-  environment.systemPackages = with pkgs; [
-    # ── 5. The Forge — Stub app (Step 5.5) ───────────────────────────
-    (writeShellApplication {
-      name = "the-forge";
-      runtimeInputs = [ zenity ];
-      text = ''
-        zenity --info \
-          --title="The Forge" \
-          --text="The Forge app store is coming soon.\n\nDiscover apps, themes, and more — all curated for Stronk." \
-          --width=400 --height=200
-      '';
-    })
-    (makeDesktopItem {
-      name = "the-forge";
-      desktopName = "The Forge";
-      comment = "Discover apps, themes, and more for Stronk";
-      exec = "the-forge";
-      icon = "system-software-install";
-      categories = [ "System" "PackageManager" ];
-    })
+  environment.systemPackages = [
+    # ── 5. The Forge — COSMIC-native app store ───────────────────────
+    (pkgs.callPackage ../forge {})
   ];
 
   # ── 2. File manager — COSMIC Files (Step 5.2) ─────────────────────

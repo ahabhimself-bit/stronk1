@@ -231,3 +231,121 @@ fn strip_html_tags(html: &str) -> String {
     let lines: Vec<&str> = result.lines().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
     lines.join("\n")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_html_simple() {
+        assert_eq!(strip_html_tags("<p>Hello</p>"), "Hello");
+    }
+
+    #[test]
+    fn strip_html_nested() {
+        assert_eq!(
+            strip_html_tags("<div><p>Hello <b>world</b></p></div>"),
+            "Hello world"
+        );
+    }
+
+    #[test]
+    fn strip_html_blank_lines() {
+        assert_eq!(
+            strip_html_tags("<p>Line 1</p>\n\n<p>Line 2</p>"),
+            "Line 1\nLine 2"
+        );
+    }
+
+    #[test]
+    fn strip_html_plain_text() {
+        assert_eq!(strip_html_tags("no tags here"), "no tags here");
+    }
+
+    #[test]
+    fn strip_html_empty() {
+        assert_eq!(strip_html_tags(""), "");
+        assert_eq!(strip_html_tags("<br/><br/>"), "");
+    }
+
+    #[test]
+    fn categorize_empty() {
+        let result = categorize_permissions(&[]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn categorize_filesystem() {
+        let perms = vec![
+            "[Context]".to_string(),
+            "filesystems=xdg-download".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].0, "Filesystem");
+        assert_eq!(result[0].1, vec!["filesystems=xdg-download"]);
+    }
+
+    #[test]
+    fn categorize_network() {
+        let perms = vec![
+            "[Context]".to_string(),
+            "shared=network".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].0, "Network");
+    }
+
+    #[test]
+    fn categorize_sockets_split() {
+        let perms = vec![
+            "[Context]".to_string(),
+            "sockets=wayland;pulseaudio;".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        let labels: Vec<&str> = result.iter().map(|(l, _)| *l).collect();
+        assert!(labels.contains(&"Display"));
+        assert!(labels.contains(&"Other"));
+    }
+
+    #[test]
+    fn categorize_devices() {
+        let perms = vec![
+            "[Context]".to_string(),
+            "devices=dri".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        assert_eq!(result[0].0, "Devices");
+    }
+
+    #[test]
+    fn categorize_dbus_goes_to_other() {
+        let perms = vec![
+            "[Session Bus Policy]".to_string(),
+            "org.freedesktop.Notifications=talk".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        assert_eq!(result[0].0, "Other");
+    }
+
+    #[test]
+    fn categorize_mixed() {
+        let perms = vec![
+            "[Context]".to_string(),
+            "shared=network".to_string(),
+            "sockets=wayland;".to_string(),
+            "filesystems=xdg-download".to_string(),
+            "devices=dri".to_string(),
+            "[Session Bus Policy]".to_string(),
+            "org.test.Bus=talk".to_string(),
+        ];
+        let result = categorize_permissions(&perms);
+        let labels: Vec<&str> = result.iter().map(|(l, _)| *l).collect();
+        assert!(labels.contains(&"Filesystem"));
+        assert!(labels.contains(&"Network"));
+        assert!(labels.contains(&"Display"));
+        assert!(labels.contains(&"Devices"));
+        assert!(labels.contains(&"Other"));
+    }
+}

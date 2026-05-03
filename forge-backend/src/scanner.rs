@@ -206,4 +206,52 @@ mod tests {
         assert!(!check_permissions(&perms, &mut violations));
         assert!(violations[0].contains("Suspicious permission"));
     }
+
+    #[test]
+    fn flags_filesystem_root() {
+        let perms = vec!["filesystem=/".to_string()];
+        let mut violations = Vec::new();
+        assert!(!check_permissions(&perms, &mut violations));
+        assert!(violations[0].contains("Suspicious"));
+    }
+
+    #[test]
+    fn case_insensitive_forbidden() {
+        let perms = vec!["Filesystem=Host".to_string()];
+        let mut violations = Vec::new();
+        assert!(!check_permissions(&perms, &mut violations));
+    }
+
+    #[test]
+    fn multiple_violations_all_reported() {
+        let perms = vec![
+            "filesystem=host".to_string(),
+            "filesystem=home".to_string(),
+            "device=all".to_string(),
+        ];
+        let mut violations = Vec::new();
+        check_permissions(&perms, &mut violations);
+        assert_eq!(violations.len(), 3);
+    }
+
+    #[test]
+    fn extract_permissions_metadata_empty() {
+        let result = extract_permissions_metadata(&[]);
+        assert_eq!(result, serde_json::json!({}));
+    }
+
+    #[test]
+    fn extract_permissions_metadata_categorizes() {
+        let perms = vec![
+            "filesystem=xdg-download".to_string(),
+            "share=network".to_string(),
+            "device=dri".to_string(),
+            "socket=wayland".to_string(),
+        ];
+        let result = extract_permissions_metadata(&perms);
+        assert!(result.get("filesystem").is_some());
+        assert!(result.get("network").is_some());
+        assert!(result.get("device").is_some());
+        assert!(result.get("other").is_some());
+    }
 }

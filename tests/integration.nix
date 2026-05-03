@@ -78,11 +78,19 @@ pkgs.nixosTest {
     machine.succeed("which brave")
     machine.succeed("firejail --list 2>/dev/null || true")
 
-    # ── Apps: The Forge stub is installed ────────────────────────────
+    # ── Apps: The Forge is installed ──────────────────────────────────
     machine.succeed("which the-forge")
 
     # ── Apps: Flatpak installed (system helper is D-Bus activated on demand) ──
     machine.succeed("flatpak --version")
+
+    # ── Keyboard: keyd service active ───────────────────────────────
+    machine.succeed("systemctl is-active keyd.service")
+
+    # ── Flatpak: global sandboxing overrides deployed ────────────────
+    override = machine.succeed("cat /var/lib/flatpak/overrides/global")
+    assert "!host" in override, "Flatpak global override missing !host restriction"
+    assert "!home" in override, "Flatpak global override missing !home restriction"
 
     # ── Kernel hardening ─────────────────────────────────────────────
     dmesg_restrict = machine.succeed("cat /proc/sys/kernel/dmesg_restrict").strip()

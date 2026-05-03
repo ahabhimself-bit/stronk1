@@ -7,7 +7,6 @@ FLAKE_SOURCE="/etc/stronk-flake"
 MOUNT_POINT="/mnt"
 LOG_FILE="/tmp/stronk-install.log"
 INSTALL_ERROR_FILE="/tmp/stronk-install-error"
-PARTITIONED=false
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -23,10 +22,6 @@ log() {
 cleanup() {
   log "Cleanup: unmounting filesystems"
   umount -R "$MOUNT_POINT" 2>/dev/null || true
-  if [[ "$PARTITIONED" == true && -n "${SELECTED_DISK:-}" ]]; then
-    log "Cleanup: wiping partition table from $SELECTED_DISK"
-    wipefs -a "$SELECTED_DISK" 2>/dev/null || true
-  fi
 }
 
 # Return partition device path (handles nvme/mmcblk vs sd/vd naming)
@@ -275,7 +270,6 @@ rm -f "$INSTALL_ERROR_FILE"
   if ! parted -s "$SELECTED_DISK" mklabel gpt; then
     install_fail "Failed to create partition table on $SELECTED_DISK"
   fi
-  PARTITIONED=true
   if ! parted -s "$SELECTED_DISK" mkpart ESP fat32 1MiB 512MiB; then
     install_fail "Failed to create EFI partition on $SELECTED_DISK"
   fi
@@ -308,19 +302,15 @@ rm -f "$INSTALL_ERROR_FILE"
 
   log "Applying user choices: timezone=$TIMEZONE, browser=$BROWSER"
 
-  # Set timezone
-  TIMEZONE_ESCAPED=$(printf '%s\n' "$TIMEZONE" | sed 's/[&/\]/\\&/g')
-  sed -i "s|time.timeZone = \"UTC\";|time.timeZone = \"$TIMEZONE_ESCAPED\";|" \
-    "$MOUNT_POINT/etc/nixos/modules/core.nix"
-
-  # Browser choice: write a NixOS module overlay instead of sed-replacing config files
+  # Write timezone and browser as NixOS module overlays (avoids fragile sed replacements)
   cat > "$MOUNT_POINT/etc/nixos/modules/browser-choice.nix" <<NIXEOF
 { ... }:
 {
   stronk.browser = "$BROWSER";
+  time.timeZone = "$TIMEZONE";
 }
 NIXEOF
-  log "Wrote browser-choice.nix: stronk.browser = \"$BROWSER\""
+  log "Wrote browser-choice.nix: browser=$BROWSER, timezone=$TIMEZONE"
 
   # Re-check network if Firefox was selected (not cached on USB)
   if [[ "$BROWSER" == "firefox" ]] && ! has_network; then
@@ -336,8 +326,6 @@ NIXEOF
     --no-channel-copy \
     2>&1 | tee -a "$LOG_FILE"
 
-  # Installation succeeded — disarm cleanup trap
-  PARTITIONED=false
   trap - EXIT
 
   echo "90"
