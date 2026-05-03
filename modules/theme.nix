@@ -21,24 +21,10 @@ let
   # We override only the fields that define Stronk branding; COSMIC
   # fills in everything else from its built-in palette.
 
-  # ── Stronk wallpaper package ───────────────────────────────────────
-  #
-  # SVG wallpapers for light and dark modes. COSMIC's background config
-  # points to these paths under $XDG_DATA_DIRS/stronk/wallpapers/.
-  # Uses builtins.readFile + writeTextDir to avoid runCommand path
-  # interpolation issues in flake sandbox builds.
-
-  stronk-wallpapers = pkgs.symlinkJoin {
-    name = "stronk-wallpapers";
-    paths = [
-      (pkgs.writeTextDir "share/stronk/wallpapers/stronk-light.svg"
-        (builtins.readFile ../assets/wallpapers/stronk-light.svg))
-      (pkgs.writeTextDir "share/stronk/wallpapers/stronk-dark.svg"
-        (builtins.readFile ../assets/wallpapers/stronk-dark.svg))
-    ];
-  };
-
-  stronk-cosmic-themes = pkgs.runCommand "stronk-cosmic-themes" { } ''
+  stronk-cosmic-themes = pkgs.runCommand "stronk-cosmic-themes" {
+    lightSvg = pkgs.writeText "stronk-light.svg" (builtins.readFile ../assets/wallpapers/stronk-light.svg);
+    darkSvg  = pkgs.writeText "stronk-dark.svg"  (builtins.readFile ../assets/wallpapers/stronk-dark.svg);
+  } ''
     # ── Stronk Light (default theme) ──────────────────────────────
     light=$out/share/cosmic/com.system76.CosmicTheme.Light.Builder/v1
     mkdir -p "$light"
@@ -103,6 +89,11 @@ let
   }
 ]
 WALL
+
+    # ── Wallpapers ────────────────────────────────────────────────────
+    mkdir -p $out/share/stronk/wallpapers
+    cp $lightSvg $out/share/stronk/wallpapers/stronk-light.svg
+    cp $darkSvg  $out/share/stronk/wallpapers/stronk-dark.svg
   '';
 
 in
@@ -132,9 +123,7 @@ in
   #   carry over automatically.
 
   environment.systemPackages = [
-    stronk-cosmic-themes  # Deploys theme + wallpaper configs to $XDG_DATA_DIRS/cosmic/
-    stronk-wallpapers     # SVG wallpapers in $XDG_DATA_DIRS/stronk/wallpapers/
-    # COSMIC ships cosmic-icons; no separate GTK icon theme needed
+    stronk-cosmic-themes  # Deploys theme configs + wallpapers to $XDG_DATA_DIRS
   ];
 
   # ── Notification policy (Step 7.7) ─────────────────────────────────
