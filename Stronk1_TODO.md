@@ -88,7 +88,7 @@ Add the five apps that ship with Stronk 1. Nothing more.
 - [x] **5.2** File manager -- COSMIC Files (included with COSMIC desktop, local-first, no cloud prompts)
 - [x] **5.3** Terminal emulator -- COSMIC Terminal (included with COSMIC desktop)
 - [x] **5.4** System settings -- COSMIC Settings (included with COSMIC desktop)
-- [x] **5.5** The Forge client -- COSMIC-native app (Rust/Iced, wired into NixOS image via `pkgs.callPackage`; `fakeHash` placeholders in `forge/default.nix` need resolution on first Linux build)
+- [x] **5.5** The Forge client -- COSMIC-native app (Rust/Iced, wired into NixOS image via `pkgs.callPackage`; git dependency hashes resolved in `forge/default.nix`)
 - [x] **5.6** Verify: exactly 5 user-facing apps in the app launcher, nothing else — `xdg.desktopEntries` hides extra COSMIC apps (cosmic-store, cosmic-text-editor, cosmic-editor) with `NoDisplay=true`. Visual verification pending build.
 - [ ] **5.7** Rebuild ISO, write to USB, boot -- verify all 5 apps launch and work ⚠️ **BLOCKED — requires USB + test hardware**
 - [ ] **5.8** Verify file manager opens in <=1 second ⚠️ **BLOCKED — requires 5.7**
