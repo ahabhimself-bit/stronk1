@@ -105,6 +105,39 @@ pkgs.nixosTest {
     # ── Journald: volatile, capped ──────────────────────────────────
     machine.succeed("journalctl --header | grep -q 'Storage: volatile' || test -d /run/log/journal")
 
+    # ── Privacy: telemetry host blocks in /etc/hosts (Step 6.6) ──────
+    hosts = machine.succeed("cat /etc/hosts")
+    assert "telemetry.brave.com" in hosts, "Missing Brave telemetry host block"
+    print("Telemetry host blocks verified in /etc/hosts")
+
+    # ── Privacy: auto-upgrade disabled at runtime (Step 6.9) ─────────
+    machine.fail("systemctl list-unit-files nixos-upgrade.timer 2>/dev/null | grep -q enabled")
+    print("Auto-upgrade timer not enabled (no nixos-upgrade.timer)")
+
+    # ── Branding: os-release identifies Stronk (Step 7.5) ───────────
+    os_release = machine.succeed("cat /etc/os-release")
+    assert 'NAME="Stronk 1"' in os_release, f"os-release missing Stronk branding: {os_release}"
+    assert 'ID=stronk' in os_release, f"os-release missing stronk ID: {os_release}"
+    print("Stronk branding verified in /etc/os-release")
+
+    # ── Apps: COSMIC desktop apps are available (Steps 5.2-5.4) ──────
+    machine.succeed("which cosmic-files")
+    machine.succeed("which cosmic-term")
+    machine.succeed("which cosmic-settings")
+    print("COSMIC Files, Terminal, and Settings all installed")
+
+    # ── Apps: extra COSMIC apps hidden from launcher (Step 5.6) ──────
+    hidden_store = machine.succeed("cat /etc/xdg/applications/com.system76.CosmicStore.desktop")
+    assert "NoDisplay=true" in hidden_store, "COSMIC Store should be hidden from launcher"
+    print("Extra COSMIC apps hidden via NoDisplay=true")
+
+    # ── Theme: Stronk theme + wallpaper packages deployed ────────────
+    machine.succeed("test -d /run/current-system/sw/share/cosmic/com.system76.CosmicTheme.Light.Builder/v1")
+    machine.succeed("test -d /run/current-system/sw/share/cosmic/com.system76.CosmicTheme.Dark.Builder/v1")
+    machine.succeed("test -f /run/current-system/sw/share/stronk/wallpapers/stronk-light.svg")
+    machine.succeed("test -f /run/current-system/sw/share/stronk/wallpapers/stronk-dark.svg")
+    print("Stronk themes and wallpapers deployed")
+
     print("All integration tests passed!")
   '';
 }
