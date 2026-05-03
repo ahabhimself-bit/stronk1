@@ -24,7 +24,7 @@ rustPlatform.buildRustPackage {
       "accesskit-0.22.0" = "sha256-pP9CyiV1zIONQ7vbl5MkMtilemSPrHaZ0c/SyR+lb0k=";
       "atomicwrites-0.4.2" = "sha256-QZSuGPrJXh+svMeFWqAXoqZQxLq/WfIiamqvjJNVhxA=";
       "clipboard_macos-0.1.0" = "sha256-WO3JFbE+6ESRAfkxrnEFeZyGuhUHLOKOVHcGQyHwoK0=";
-      "cosmic-config-1.0.0" = "sha256-dp6IPF6MBPkR0Ig9GjuklKe/UoSaZKi7G8AKyxcLtFk=";
+      "cosmic-config-1.0.0" = "sha256-6Q0IR40YKTLn/tp9cZGGO15PjsJtnbEPP/OBgAVOfQE=";
       "cosmic-freedesktop-icons-0.4.0" = "sha256-n+6nDpRdLeWYVFrtDqFYI83K7s96UEE6bqCF+UYyv7I=";
       "cosmic-settings-daemon-0.1.0" = "sha256-YRCNF2NQia6a9QlUIoEw0v2bMiZq94eViLsx+8NoghI=";
       "cosmic-text-0.18.2" = "sha256-PUmICUP9yh5Cpy6AlvjMrosrNo9Jg/OZfyAjOiou6YA=";
